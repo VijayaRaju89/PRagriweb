@@ -1,0 +1,3458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgriShield Pro — Farming Pesticide Store Management</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+    @media print {
+      body * { visibility: hidden !important; }
+      #print-invoice-area, #print-invoice-area * { visibility: visible !important; }
+      #print-invoice-area {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        background: white !important;
+        padding: 24px !important;
+        box-shadow: none !important;
+      }
+      .no-print { display: none !important; }
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased min-h-screen">
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed top-4 right-4 z-[100] flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+  <!-- LOGIN VIEW -->
+  <div id="login-screen" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-emerald-950 via-emerald-900 to-slate-900">
+    <div class="w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-12">
+      <!-- Left Brand Panel -->
+      <div class="md:col-span-5 bg-emerald-800 text-white p-8 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-11 h-11 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center">
+              <i data-lucide="sprout" class="w-6 h-6 text-emerald-300"></i>
+            </div>
+            <div>
+              <h1 class="text-xl font-bold tracking-tight">AgriShield Pro</h1>
+              <p class="text-xs text-emerald-200/80">Agrochemical &amp; Pesticide ERP</p>
+            </div>
+          </div>
+          <div class="rounded-xl overflow-hidden border border-emerald-600/50 shadow-lg bg-emerald-900/40">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQe9kykKu9F6KEcGvEwkuYWKyFr4juPMw3-UyB4qjaJwg&s=10" alt="AgriShield Pro Store" class="w-full h-64 object-cover" />
+          </div>
+        </div>
+        <div class="mt-8 pt-6 border-t border-emerald-700/60 text-xs text-emerald-200/70">
+          KisanGuard Agro Inputs • Lic: KA-BLR-PES-2026-8841
+        </div>
+      </div>
+
+      <!-- Right Login Panel -->
+      <div class="md:col-span-7 p-8">
+        <div class="mb-6">
+          <h3 class="text-xl font-bold text-slate-900">Sign in to Store Portal</h3>
+          <p class="text-sm text-slate-500 mt-1">Select your role and sign in with credentials provided by your Store Admin.</p>
+        </div>
+
+        <!-- Role Selector Tabs -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6" role="tablist">
+          <button type="button" data-role-tab="owner" class="role-tab-btn flex flex-col items-center gap-1.5 p-2.5 rounded-xl border-2 border-emerald-600 bg-emerald-50 text-emerald-800 transition cursor-pointer">
+            <i data-lucide="crown" class="w-4 h-4"></i>
+            <span class="text-xs font-semibold">Shop Owner</span>
+          </button>
+          <button type="button" data-role-tab="admin" class="role-tab-btn flex flex-col items-center gap-1.5 p-2.5 rounded-xl border-2 border-slate-200 bg-white text-slate-600 hover:border-slate-300 transition cursor-pointer">
+            <i data-lucide="shield-check" class="w-4 h-4"></i>
+            <span class="text-xs font-semibold">Admin</span>
+          </button>
+          <button type="button" data-role-tab="staff" class="role-tab-btn flex flex-col items-center gap-1.5 p-2.5 rounded-xl border-2 border-slate-200 bg-white text-slate-600 hover:border-slate-300 transition cursor-pointer">
+            <i data-lucide="user-check" class="w-4 h-4"></i>
+            <span class="text-xs font-semibold">Staff / POS</span>
+          </button>
+          <button type="button" data-role-tab="customer" class="role-tab-btn flex flex-col items-center gap-1.5 p-2.5 rounded-xl border-2 border-slate-200 bg-white text-slate-600 hover:border-slate-300 transition cursor-pointer">
+            <i data-lucide="user" class="w-4 h-4"></i>
+            <span class="text-xs font-semibold">Customer</span>
+          </button>
+        </div>
+
+        <form id="login-form" class="space-y-4">
+          <div>
+            <label for="login-username" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Email or Mobile Number</label>
+            <input id="login-username" type="text" required autocomplete="username" placeholder="Enter your Email or 10-digit Mobile" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" />
+          </div>
+          <div>
+            <label for="login-pin" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Password / PIN</label>
+            <input id="login-pin" type="password" required autocomplete="current-password" placeholder="Enter your Password / PIN" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" />
+          </div>
+
+          <div id="login-error" class="hidden p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs font-medium text-rose-700"></div>
+
+          <div id="role-access-note" class="p-3 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600">
+            <strong class="text-slate-800">Shop Owner Access:</strong> Full P&amp;L analytics, profit margins, inventory, POS billing, customer ledgers, invoices, staff management, and WhatsApp reminders.
+          </div>
+
+          <button type="submit" class="w-full py-2.5 px-4 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold rounded-lg text-sm transition flex items-center justify-center gap-2 cursor-pointer">
+            <i data-lucide="log-in" class="w-4 h-4"></i>
+            <span>Sign In</span>
+          </button>
+
+          <div id="customer-signup-link" class="hidden text-center pt-2">
+            <button type="button" onclick="openCustomerSignupModal()" class="text-xs font-semibold text-emerald-700 hover:underline cursor-pointer">
+              New Farmer / Customer? Create your account →
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP SHELL -->
+  <div id="app-shell" class="hidden min-h-screen flex flex-col lg:flex-row">
+    <!-- Mobile Header -->
+    <header class="lg:hidden bg-emerald-900 text-white px-4 py-3 flex items-center justify-between sticky top-0 z-40">
+      <div class="flex items-center gap-2.5">
+        <i data-lucide="sprout" class="w-5 h-5 text-emerald-300"></i>
+        <span class="font-bold text-base">AgriShield Pro</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="mobile-role-badge" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-700 text-emerald-100">Owner</span>
+        <button type="button" id="mobile-menu-btn" class="p-1.5 rounded-lg hover:bg-emerald-800 cursor-pointer" aria-label="Toggle Menu">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="hidden lg:flex lg:flex-col w-64 bg-slate-900 text-slate-300 shrink-0 lg:sticky lg:top-0 lg:h-screen z-50 fixed inset-y-0 left-0">
+      <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-lg bg-emerald-600 flex items-center justify-center text-white">
+            <i data-lucide="sprout" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="font-bold text-white text-sm leading-tight">AgriShield Pro</div>
+            <div class="text-[11px] text-slate-400">KisanGuard Agro Store</div>
+          </div>
+        </div>
+        <button type="button" id="close-sidebar-btn" class="lg:hidden text-slate-400 hover:text-white cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Active User Card -->
+      <div class="p-4 mx-3 mt-4 rounded-xl bg-slate-800/70 border border-slate-700/60">
+        <div class="flex items-center gap-3">
+          <div id="user-avatar" class="w-9 h-9 rounded-full bg-emerald-600 text-white font-bold text-sm flex items-center justify-center shrink-0">RK</div>
+          <div class="min-w-0 flex-1">
+            <div id="user-display-name" class="text-sm font-semibold text-white truncate">Rajesh Kulkarni</div>
+            <div id="user-role-label" class="text-[11px] font-medium text-emerald-400">Shop Owner</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nav Links -->
+      <nav id="sidebar-nav" class="flex-1 px-3 py-4 space-y-1 overflow-y-auto"></nav>
+
+      <!-- Bottom Logout -->
+      <div class="p-3 border-t border-slate-800">
+        <button type="button" id="logout-btn" class="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-slate-800 hover:bg-rose-950/60 hover:text-rose-300 text-slate-300 text-xs font-semibold transition cursor-pointer">
+          <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+          <span>Sign Out</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 min-w-0 flex flex-col">
+      <!-- Top Bar -->
+      <div class="bg-white border-b border-slate-200 px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-30">
+        <div>
+          <h2 id="page-title" class="text-lg font-bold text-slate-900">Executive Dashboard</h2>
+          <p id="page-subtitle" class="text-xs text-slate-500">Live store overview, stock availability, and receivables</p>
+        </div>
+        <div id="topbar-actions" class="flex items-center gap-2.5">
+          <button type="button" onclick="navigate('pos')" class="px-3.5 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>New Bill / Invoice</span>
+          </button>
+          <button type="button" onclick="navigate('reminders')" class="px-3.5 py-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition">
+            <i data-lucide="message-square" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Send Reminders</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Dynamic View Container -->
+      <div id="view-container" class="p-4 sm:p-6 flex-1 space-y-6"></div>
+    </main>
+  </div>
+
+  <!-- MODAL BACKDROP -->
+  <div id="modal-root" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
+    <div id="modal-card" class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden my-auto"></div>
+  </div>
+
+<script>
+// ============================================================================
+// 0. SUPABASE REAL-TIME BACKEND CONFIGURATION
+// Paste your Project URL and Anon Key from Supabase -> Project Settings -> API
+// ============================================================================
+const SUPABASE_URL = 'https://ykhxqrikxdthxldrdigu.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable__xdjIZK9gBLqPKSc7eWubg_jJmzAm86'; // Paste your sb_publishable_... or anon eyJ... key here
+const USE_SUPABASE = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase);
+const sb = USE_SUPABASE ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+const sbAuthHelper = USE_SUPABASE ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } }) : null;
+let realtimeChannel = null;
+
+async function syncFromSupabase() {
+  if (!USE_SUPABASE || !sb) return;
+  try {
+    const [stRes, invRes, custRes, invcRes, itemsRes, payRes, yrRes, remRes, profRes] = await Promise.all([
+      sb.from('store_settings').select('*').eq('id', 1).maybeSingle(),
+      sb.from('inventory').select('*').order('updated_at', { ascending: false }),
+      sb.from('customers').select('*').order('created_at', { ascending: false }),
+      sb.from('invoices').select('*').order('created_at', { ascending: false }),
+      sb.from('invoice_items').select('*'),
+      sb.from('payments').select('*').order('created_at', { ascending: false }),
+      sb.from('yearly_list').select('*').order('year', { ascending: false }),
+      sb.from('reminders').select('*').order('created_at', { ascending: false }),
+      sb.from('profiles').select('*')
+    ]);
+
+    if (stRes.data) {
+      const s = stRes.data;
+      state.data.store = { name: s.store_name, gstin: s.gstin, license: s.pesticide_license, address: s.address, phone: s.phone };
+      state.data.bankDetails = { bankName: s.bank_name, accountHolder: s.account_holder, accountNumber: s.account_number, ifsc: s.ifsc, branch: s.branch, upiId: s.upi_id };
+    }
+    if (invRes.data) {
+      state.data.inventory = invRes.data.map(i => ({
+        id: i.id, sku: i.sku, name: i.name, category: i.category, brand: i.brand, hsn: i.hsn,
+        batch: i.batch, expiry: i.expiry, stock: i.stock, unit: i.unit, reorder: i.reorder_level,
+        costPrice: Number(i.cost_price), mrp: Number(i.mrp), gst: Number(i.gst_percent), image: i.image_url || ''
+      }));
+    }
+    if (custRes.data) {
+      state.data.customers = custRes.data.map(c => ({
+        id: c.id, name: c.name, phone: c.phone, village: c.village, crop: c.crop,
+        totalSpent: Number(c.total_spent), due: Number(c.due), lastVisit: c.last_visit
+      }));
+    }
+    if (invcRes.data) {
+      const allItems = itemsRes.data || [];
+      state.data.invoices = invcRes.data.map(inv => ({
+        id: inv.id, date: inv.invoice_date, customerId: inv.customer_id, customerName: inv.customer_name,
+        customerPhone: inv.customer_phone, staff: inv.staff_name,
+        items: allItems.filter(it => it.invoice_id === inv.id).map(it => ({
+          id: it.product_id, name: it.product_name, hsn: it.hsn, batch: it.batch,
+          qty: it.qty, price: Number(it.price), gst: Number(it.gst_percent)
+        })),
+        subtotal: Number(inv.subtotal), gstAmount: Number(inv.gst_amount), discount: Number(inv.discount),
+        total: Number(inv.total), paid: Number(inv.paid), due: Number(inv.due), method: inv.method, status: inv.status
+      }));
+    }
+    if (payRes.data) {
+      state.data.payments = payRes.data.map(p => ({
+        id: p.id, date: p.payment_date, invoiceId: p.invoice_id, customerName: p.customer_name,
+        amount: Number(p.amount), method: p.method, ref: p.txn_ref, status: p.status
+      }));
+    }
+    if (yrRes.data) {
+      state.data.yearlyList = yrRes.data.map(r => ({
+        id: r.id, year: r.year, season: r.season, productName: r.product_name, category: r.category,
+        unitRate: Number(r.unit_rate), totalQtySold: r.total_qty_sold, totalRevenue: Number(r.total_revenue), notes: r.notes || ''
+      }));
+    }
+    if (remRes.data) {
+      state.data.reminders = remRes.data.map(r => ({
+        id: r.id, date: (r.created_at || '').slice(0, 16).replace('T', ' '), customerName: r.customer_name,
+        phone: r.phone, channel: r.channel, type: r.reminder_type, message: r.message, status: r.status
+      }));
+    }
+    if (profRes.data) {
+      state.data.staffList = profRes.data.filter(p => p.role !== 'customer').map(p => ({
+        id: p.id, name: p.full_name,
+        role: p.role === 'owner' ? 'Shop Owner' : (p.role === 'admin' ? 'Admin / Manager' : 'Staff / Cashier'),
+        email: p.email || '', phone: p.phone || '', status: p.status || 'Active', lastActive: 'Synced'
+      }));
+    }
+    if (state.currentUser) renderCurrentView();
+  } catch (err) {
+    console.error('Supabase sync error:', err);
+  }
+}
+
+function subscribeRealtime() {
+  if (!USE_SUPABASE || !sb || realtimeChannel) return;
+  realtimeChannel = sb.channel('agrishield-live')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, () => syncFromSupabase())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'customers' }, () => syncFromSupabase())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices' }, () => syncFromSupabase())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => syncFromSupabase())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'yearly_list' }, () => syncFromSupabase())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'reminders' }, () => syncFromSupabase())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'store_settings' }, () => syncFromSupabase())
+    .subscribe();
+}
+
+async function sbWrite(fn) {
+  if (!USE_SUPABASE || !sb) return { ok: true };
+  try {
+    const res = await fn(sb);
+    if (res && res.error) {
+      console.error('Supabase write error:', res.error);
+      showToast('Save failed: ' + (res.error.message || 'Check Supabase permissions/profiles'), 'error');
+      return { ok: false, error: res.error };
+    }
+    return { ok: true, data: res?.data };
+  } catch (e) {
+    console.error('Supabase write exception:', e);
+    showToast('Save failed: ' + (e.message || 'Network/database error'), 'error');
+    return { ok: false, error: e };
+  }
+}
+
+// ============================================================================
+// 1. INITIAL DATA & ROLE DEFINITIONS
+// ============================================================================
+const ROLES = {
+  owner: {
+    key: 'owner',
+    label: 'Shop Owner',
+    name: 'Rajesh Kulkarni',
+    initials: 'RK',
+    email: 'owner@agrishield.in',
+    pin: 'owner123',
+    badgeClass: 'bg-amber-100 text-amber-800',
+    permissions: ['dashboard', 'inventory', 'pos', 'customers', 'payments', 'invoices', 'reminders', 'yearly', 'staff', 'profit_view', 'delete_item', 'edit_item', 'edit_bank', 'manage_yearly']
+  },
+  admin: {
+    key: 'admin',
+    label: 'Admin / Manager',
+    name: 'Sneha Deshmukh',
+    initials: 'SD',
+    email: 'admin@agrishield.in',
+    pin: 'admin123',
+    badgeClass: 'bg-indigo-100 text-indigo-800',
+    permissions: ['dashboard', 'inventory', 'pos', 'customers', 'payments', 'invoices', 'reminders', 'yearly', 'staff', 'edit_item', 'edit_bank', 'manage_yearly']
+  },
+  staff: {
+    key: 'staff',
+    label: 'Staff / Cashier',
+    name: 'Mahesh Gowda',
+    initials: 'MG',
+    email: 'staff@agrishield.in',
+    pin: 'staff123',
+    badgeClass: 'bg-emerald-100 text-emerald-800',
+    permissions: ['dashboard', 'inventory', 'pos', 'customers', 'payments', 'invoices', 'reminders', 'yearly', 'edit_item', 'edit_bank', 'manage_yearly']
+  },
+  customer: {
+    key: 'customer',
+    label: 'Customer / Farmer',
+    name: 'Basavaraj Patil',
+    initials: 'BP',
+    email: 'customer@agrishield.in',
+    pin: 'cust123',
+    customerId: 'C001',
+    badgeClass: 'bg-sky-100 text-sky-800',
+    permissions: ['dashboard', 'inventory', 'yearly', 'invoices', 'payments', 'reminders']
+  }
+};
+
+const DEFAULT_DATA = {
+  store: {
+    name: 'KisanGuard Agro Inputs & Pesticides',
+    gstin: '29AABCK4821M1Z5',
+    license: 'KA-BLR-PES-2026-8841',
+    address: 'Plot 42, APMC Yard, Yeshwanthpur, Bengaluru, Karnataka 560022',
+    phone: '+91 98450 11223'
+  },
+  bankDetails: {
+    bankName: 'State Bank of India (SBI)',
+    accountHolder: 'KisanGuard Agro Inputs & Pesticides',
+    accountNumber: '394810294851',
+    ifsc: 'SBIN0004821',
+    branch: 'Yeshwanthpur APMC Branch, Bengaluru',
+    upiId: 'kisanguard.agro@sbi'
+  },
+  inventory: [
+    { id: 'P001', sku: 'INS-101', name: 'Confidor (Imidacloprid 17.8% SL)', category: 'Insecticide', brand: 'Bayer CropScience', hsn: '38089199', batch: 'B26-041', expiry: '2027-08-15', stock: 64, unit: '500 ml Bottle', reorder: 15, costPrice: 420, mrp: 540, gst: 18 },
+    { id: 'P002', sku: 'HER-204', name: 'Roundup (Glyphosate 41% SL)', category: 'Herbicide', brand: 'Bayer CropScience', hsn: '38089390', batch: 'G26-112', expiry: '2027-05-20', stock: 12, unit: '1 L Bottle', reorder: 20, costPrice: 360, mrp: 465, gst: 18 },
+    { id: 'P003', sku: 'FUN-309', name: 'Indofil M-45 (Mancozeb 75% WP)', category: 'Fungicide', brand: 'Indofil Industries', hsn: '38089290', batch: 'M25-883', expiry: '2026-12-28', stock: 48, unit: '1 Kg Pouch', reorder: 15, costPrice: 310, mrp: 410, gst: 18 },
+    { id: 'P004', sku: 'INS-118', name: 'Coragen (Chlorantraniliprole 18.5% SC)', category: 'Insecticide', brand: 'FMC India', hsn: '38089199', batch: 'C26-309', expiry: '2028-01-10', stock: 28, unit: '150 ml Bottle', reorder: 10, costPrice: 1250, mrp: 1580, gst: 18 },
+    { id: 'P005', sku: 'BIO-402', name: 'NeemAzal (Azadirachtin 1% EC)', category: 'Bio-Pesticide', brand: 'EID Parry', hsn: '38089990', batch: 'N26-077', expiry: '2027-03-30', stock: 8, unit: '1 L Bottle', reorder: 12, costPrice: 480, mrp: 620, gst: 12 },
+    { id: 'P006', sku: 'FUN-322', name: 'Amistar Top (Azoxystrobin + Difenoconazole)', category: 'Fungicide', brand: 'Syngenta', hsn: '38089290', batch: 'A26-510', expiry: '2027-11-18', stock: 35, unit: '250 ml Bottle', reorder: 10, costPrice: 890, mrp: 1150, gst: 18 },
+    { id: 'P007', sku: 'INS-130', name: 'Dursban (Chlorpyrifos 20% EC)', category: 'Insecticide', brand: 'Corteva', hsn: '38089199', batch: 'D25-994', expiry: '2026-12-15', stock: 0, unit: '1 L Bottle', reorder: 15, costPrice: 295, mrp: 390, gst: 18 },
+    { id: 'P008', sku: 'MIC-505', name: 'Multiplex General Liquid (Micronutrients)', category: 'Micronutrient', brand: 'Multiplex Group', hsn: '31059090', batch: 'MX26-19', expiry: '2028-04-01', stock: 92, unit: '1 L Bottle', reorder: 20, costPrice: 210, mrp: 290, gst: 12 }
+  ],
+  customers: [
+    { id: 'C001', name: 'Basavaraj Patil', phone: '9845123401', village: 'Mandya', crop: 'Paddy & Sugarcane', totalSpent: 48200, due: 8500, lastVisit: '2026-11-20', password: 'cust123' },
+    { id: 'C002', name: 'Rameshappa Gowda', phone: '9900234512', village: 'Hassan', crop: 'Coffee & Pepper', totalSpent: 72450, due: 0, lastVisit: '2026-11-23', password: 'cust123' },
+    { id: 'C003', name: 'Kavitha Reddy', phone: '9740112233', village: 'Chikkaballapur', crop: 'Tomato & Grapes', totalSpent: 34900, due: 4250, lastVisit: '2026-11-18', password: 'cust123' },
+    { id: 'C004', name: 'Siddharth Naik', phone: '9880556677', village: 'Tumakuru', crop: 'Arecanut & Coconut', totalSpent: 61300, due: 12400, lastVisit: '2026-11-14', password: 'cust123' },
+    { id: 'C005', name: 'Manjunath Hegde', phone: '9448119900', village: 'Shivamogga', crop: 'Paddy & Maize', totalSpent: 19800, due: 0, lastVisit: '2026-11-24', password: 'cust123' },
+    { id: 'C006', name: 'Lakshmi Narasimha', phone: '9611223344', village: 'Kolar', crop: 'Potato & Onion', totalSpent: 28750, due: 3100, lastVisit: '2026-11-10', password: 'cust123' }
+  ],
+  invoices: [
+    {
+      id: 'INV-2026-1041',
+      date: '2026-11-24',
+      customerId: 'C005',
+      customerName: 'Manjunath Hegde',
+      customerPhone: '9448119900',
+      staff: 'Mahesh Gowda',
+      items: [
+        { id: 'P001', name: 'Confidor (Imidacloprid 17.8% SL)', hsn: '38089199', batch: 'B26-041', qty: 4, price: 540, gst: 18 },
+        { id: 'P008', name: 'Multiplex General Liquid (Micronutrients)', hsn: '31059090', batch: 'MX26-19', qty: 5, price: 290, gst: 12 }
+      ],
+      subtotal: 3610,
+      gstAmount: 562.80,
+      discount: 72.80,
+      total: 4100,
+      paid: 4100,
+      due: 0,
+      method: 'UPI',
+      status: 'Paid'
+    },
+    {
+      id: 'INV-2026-1040',
+      date: '2026-11-23',
+      customerId: 'C002',
+      customerName: 'Rameshappa Gowda',
+      customerPhone: '9900234512',
+      staff: 'Sneha Deshmukh',
+      items: [
+        { id: 'P006', name: 'Amistar Top (Azoxystrobin + Difenoconazole)', hsn: '38089290', batch: 'A26-510', qty: 6, price: 1150, gst: 18 }
+      ],
+      subtotal: 6900,
+      gstAmount: 1242,
+      discount: 142,
+      total: 8000,
+      paid: 8000,
+      due: 0,
+      method: 'Cash',
+      status: 'Paid'
+    },
+    {
+      id: 'INV-2026-1039',
+      date: '2026-11-20',
+      customerId: 'C001',
+      customerName: 'Basavaraj Patil',
+      customerPhone: '9845123401',
+      staff: 'Mahesh Gowda',
+      items: [
+        { id: 'P004', name: 'Coragen (Chlorantraniliprole 18.5% SC)', hsn: '38089199', batch: 'C26-309', qty: 5, price: 1580, gst: 18 },
+        { id: 'P003', name: 'Indofil M-45 (Mancozeb 75% WP)', hsn: '38089290', batch: 'M25-883', qty: 4, price: 410, gst: 18 }
+      ],
+      subtotal: 9540,
+      gstAmount: 1717.20,
+      discount: 257.20,
+      total: 11000,
+      paid: 2500,
+      due: 8500,
+      method: 'Partial (UPI + Credit)',
+      status: 'Partial'
+    },
+    {
+      id: 'INV-2026-1038',
+      date: '2026-11-18',
+      customerId: 'C003',
+      customerName: 'Kavitha Reddy',
+      customerPhone: '9740112233',
+      staff: 'Mahesh Gowda',
+      items: [
+        { id: 'P002', name: 'Roundup (Glyphosate 41% SL)', hsn: '38089390', batch: 'G26-112', qty: 8, price: 465, gst: 18 }
+      ],
+      subtotal: 3720,
+      gstAmount: 669.60,
+      discount: 139.60,
+      total: 4250,
+      paid: 0,
+      due: 4250,
+      method: 'Credit (Udhaar)',
+      status: 'Pending'
+    }
+  ],
+  payments: [
+    { id: 'PAY-901', date: '2026-11-24', invoiceId: 'INV-2026-1041', customerName: 'Manjunath Hegde', amount: 4100, method: 'UPI', ref: 'UPI-43291088', status: 'Completed' },
+    { id: 'PAY-900', date: '2026-11-23', invoiceId: 'INV-2026-1040', customerName: 'Rameshappa Gowda', amount: 8000, method: 'Cash', ref: 'CASH-COUNTER-1', status: 'Completed' },
+    { id: 'PAY-899', date: '2026-11-20', invoiceId: 'INV-2026-1039', customerName: 'Basavaraj Patil', amount: 2500, method: 'UPI', ref: 'UPI-43289901', status: 'Partial' },
+    { id: 'PAY-898', date: '2026-11-14', invoiceId: 'INV-2026-1034', customerName: 'Siddharth Naik', amount: 5000, method: 'Card', ref: 'POS-VISA-7712', status: 'Completed' }
+  ],
+  reminders: [
+    { id: 'REM-104', date: '2026-11-24 10:15', customerName: 'Basavaraj Patil', phone: '9845123401', channel: 'WhatsApp', type: 'Payment Due', message: 'Namaste Basavaraj Patil, gentle reminder from KisanGuard Agro: ₹8,500 is pending for Invoice INV-2026-1039. Please pay via UPI or at store.', status: 'Delivered' },
+    { id: 'REM-103', date: '2026-11-23 16:40', customerName: 'Kavitha Reddy', phone: '9740112233', channel: 'WhatsApp', type: 'Crop Spray Schedule', message: 'KisanGuard Alert: Kavitha Reddy, your 15-day follow-up spray for Tomato & Grapes (Amistar Top) is due this week. Visit store for stock.', status: 'Delivered' },
+    { id: 'REM-102', date: '2026-11-22 11:20', customerName: 'Siddharth Naik', phone: '9880556677', channel: 'WhatsApp', type: 'Payment Due', message: 'Namaste Siddharth Naik, gentle reminder from KisanGuard Agro: ₹12,400 balance is due on your account. Thank you!', status: 'Delivered' }
+  ],
+  yearlyList: [
+    { id: 'Y2026-1', year: '2026', season: 'Kharif & Rabi 2026', productName: 'Confidor (Imidacloprid 17.8% SL)', category: 'Insecticide', unitRate: 540, totalQtySold: 420, totalRevenue: 226800, notes: 'High demand for paddy & cotton belt' },
+    { id: 'Y2026-2', year: '2026', season: 'Kharif 2026', productName: 'Coragen (Chlorantraniliprole 18.5% SC)', category: 'Insecticide', unitRate: 1580, totalQtySold: 185, totalRevenue: 292300, notes: 'Top-selling stem borer control' },
+    { id: 'Y2025-1', year: '2025', season: 'Annual 2025', productName: 'Roundup (Glyphosate 41% SL)', category: 'Herbicide', unitRate: 445, totalQtySold: 610, totalRevenue: 271450, notes: 'Pre-monsoon weed management' },
+    { id: 'Y2025-2', year: '2025', season: 'Rabi 2025', productName: 'Amistar Top (Azoxystrobin + Difenoconazole)', category: 'Fungicide', unitRate: 1120, totalQtySold: 240, totalRevenue: 268800, notes: 'Tomato & grape foliar protection' },
+    { id: 'Y2024-1', year: '2024', season: 'Annual 2024', productName: 'Indofil M-45 (Mancozeb 75% WP)', category: 'Fungicide', unitRate: 390, totalQtySold: 530, totalRevenue: 206700, notes: 'Baseline fungicide supply' }
+  ],
+  staffList: [
+    { id: 'U01', name: 'Rajesh Kulkarni', role: 'Shop Owner', email: 'owner@agrishield.in', phone: '9845011223', password: 'owner123', status: 'Active', lastActive: 'Online now' },
+    { id: 'U02', name: 'Sneha Deshmukh', role: 'Admin / Manager', email: 'admin@agrishield.in', phone: '9845099887', password: 'admin123', status: 'Active', lastActive: '25 mins ago' },
+    { id: 'U03', name: 'Mahesh Gowda', role: 'Staff / Cashier', email: 'staff@agrishield.in', phone: '9741055443', password: 'staff123', status: 'Active', lastActive: 'Online now' },
+    { id: 'U04', name: 'Prakash Rao', role: 'Staff / Warehouse', email: 'prakash@agrishield.in', phone: '9901244556', password: 'staff123', status: 'Active', lastActive: '2 hours ago' }
+  ]
+};
+
+// ============================================================================
+// 2. APPLICATION STATE & STORAGE
+// ============================================================================
+const STORAGE_KEY = 'agrishield_pro_v1_state';
+
+let state = {
+  currentUser: null, // ROLES[key]
+  activeView: 'dashboard',
+  selectedLoginRole: 'owner',
+  selectedCustomerLoginId: 'C001',
+  data: JSON.parse(JSON.stringify(DEFAULT_DATA)),
+  posCart: [],
+  posCustomerId: 'C001',
+  posDiscount: 0,
+  posPaymentMethod: 'UPI',
+  posPaidAmount: '',
+  inventoryFilter: { search: '', category: 'All', stockStatus: 'All' },
+  posSearch: '',
+  customerSearch: '',
+  invoiceSearch: '',
+  paymentFilter: 'All',
+  paymentSearch: '',
+  scannerInvoiceId: '',
+  scannerAmount: '',
+  reminderSearch: '',
+  staffSearch: '',
+  yearlyFilter: { year: 'All', search: '' },
+  reminderDraft: {
+    channel: 'WhatsApp',
+    template: 'payment_due',
+    selectedCustomerIds: ['C001', 'C003'],
+    customText: ''
+  }
+};
+
+let chartInstances = {};
+
+function loadSavedState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.inventory && parsed.customers) {
+        state.data = parsed;
+        if (!state.data.bankDetails) state.data.bankDetails = JSON.parse(JSON.stringify(DEFAULT_DATA.bankDetails));
+        if (!state.data.yearlyList) state.data.yearlyList = JSON.parse(JSON.stringify(DEFAULT_DATA.yearlyList));
+        state.data.staffList.forEach(s => { if (!s.password) s.password = 'staff123'; });
+        state.data.customers.forEach(c => { if (!c.password) c.password = 'cust123'; });
+      }
+    }
+  } catch (e) {
+    // Ignore storage errors in restricted environments
+  }
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
+  } catch (e) {
+    // Ignore storage errors
+  }
+}
+
+function resetDemoData() {
+  state.data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+  state.posCart = [];
+  saveState();
+  showToast('Demo store data restored to defaults.', 'success');
+  renderCurrentView();
+}
+
+// ============================================================================
+// 3. UTILITIES & HELPERS
+// ============================================================================
+function isUuid(v) {
+  return typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+}
+
+function fmtINR(num) {
+  const n = Number(num || 0);
+  return '₹' + n.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
+function hasPerm(perm) {
+  return state.currentUser && state.currentUser.permissions.includes(perm);
+}
+
+function getStockStatus(item) {
+  const today = new Date('2026-11-25');
+  const exp = new Date(item.expiry);
+  const daysToExp = Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
+  if (item.stock <= 0) return { label: 'Out of Stock', cls: 'bg-rose-100 text-rose-800 border-rose-200', key: 'out' };
+  if (item.stock <= item.reorder) return { label: 'Low Stock', cls: 'bg-amber-100 text-amber-800 border-amber-200', key: 'low' };
+  if (daysToExp <= 45) return { label: 'Expiring Soon', cls: 'bg-orange-100 text-orange-800 border-orange-200', key: 'expiring' };
+  return { label: 'In Stock', cls: 'bg-emerald-100 text-emerald-800 border-emerald-200', key: 'ok' };
+}
+
+function getProductThumb(item, sizeClass = 'w-10 h-10') {
+  if (item.image) {
+    return `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" class="${sizeClass} rounded-lg object-cover border border-slate-200 shrink-0 bg-white" />`;
+  }
+  return `<div class="${sizeClass} rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center shrink-0"><i data-lucide="flask-conical" class="w-4 h-4"></i></div>`;
+}
+
+function escapeHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const colors = {
+    success: 'bg-emerald-800 text-white border-emerald-600',
+    error: 'bg-rose-700 text-white border-rose-500',
+    warning: 'bg-amber-600 text-white border-amber-500',
+    info: 'bg-slate-800 text-white border-slate-700'
+  };
+  const el = document.createElement('div');
+  el.className = `pointer-events-auto px-4 py-3 rounded-xl shadow-lg border text-xs font-medium flex items-center justify-between gap-3 transition-all ${colors[type] || colors.info}`;
+  el.innerHTML = `<span>${escapeHtml(message)}</span><button type="button" class="opacity-75 hover:opacity-100 cursor-pointer" onclick="this.parentElement.remove()">✕</button>`;
+  container.appendChild(el);
+  setTimeout(() => { if (el.parentElement) el.remove(); }, 4000);
+}
+
+function openModal(htmlContent, maxWidthClass = 'max-w-2xl') {
+  const root = document.getElementById('modal-root');
+  const card = document.getElementById('modal-card');
+  card.className = `bg-white rounded-2xl shadow-2xl w-full ${maxWidthClass} overflow-hidden my-auto`;
+  card.innerHTML = htmlContent;
+  root.classList.remove('hidden');
+  root.classList.add('flex');
+  if (state.activeView === 'payments') updateMerchantQR();
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeModal() {
+  const root = document.getElementById('modal-root');
+  root.classList.add('hidden');
+  root.classList.remove('flex');
+}
+
+// ============================================================================
+// 4. AUTHENTICATION & NAVIGATION
+// ============================================================================
+function selectLoginRole(roleKey) {
+  state.selectedLoginRole = roleKey;
+  const errEl = document.getElementById('login-error');
+  if (errEl) { errEl.classList.add('hidden'); errEl.textContent = ''; }
+
+  document.querySelectorAll('.role-tab-btn').forEach(btn => {
+    const active = btn.dataset.roleTab === roleKey;
+    btn.className = active
+      ? 'role-tab-btn flex flex-col items-center gap-1.5 p-2.5 rounded-xl border-2 border-emerald-600 bg-emerald-50 text-emerald-800 transition cursor-pointer'
+      : 'role-tab-btn flex flex-col items-center gap-1.5 p-2.5 rounded-xl border-2 border-slate-200 bg-white text-slate-600 hover:border-slate-300 transition cursor-pointer';
+  });
+
+  const notes = {
+    owner: '<strong class="text-slate-800">Shop Owner Access:</strong> Full P&amp;L analytics, profit margins, inventory, POS billing, customer ledgers, invoices, staff management, and WhatsApp reminders.',
+    admin: '<strong class="text-slate-800">Admin / Manager Access:</strong> Full inventory &amp; restocking, supplier batches, customer management, payment reconciliation, invoices, and WhatsApp reminders.',
+    staff: '<strong class="text-slate-800">Staff / POS Access:</strong> Fast POS billing, live stock availability lookup, customer registration, GST invoice printing, and payment/spray reminders.',
+    customer: '<strong class="text-slate-800">Customer / Farmer Portal:</strong> Sign in with the Mobile Number &amp; PIN given by the store to view products, place orders, check GST invoices, and pay dues via UPI QR.'
+  };
+  document.getElementById('role-access-note').innerHTML = notes[roleKey];
+  const signupWrap = document.getElementById('customer-signup-link');
+  if (signupWrap) {
+    signupWrap.classList.toggle('hidden', roleKey !== 'customer');
+  }
+}
+
+function setActiveCustomerUser(custId) {
+  const c = state.data.customers.find(x => x.id === custId) || state.data.customers[0];
+  if (!c) return;
+  state.selectedCustomerLoginId = c.id;
+  ROLES.customer.customerId = c.id;
+  ROLES.customer.name = c.name;
+  ROLES.customer.initials = c.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+}
+
+async function handleCredentialLogin() {
+  const userInput = (document.getElementById('login-username').value || '').trim();
+  const passInput = (document.getElementById('login-pin').value || '').trim();
+  const errEl = document.getElementById('login-error');
+  const roleKey = state.selectedLoginRole;
+
+  if (USE_SUPABASE && sb) {
+    let loginEmail = userInput;
+    if (roleKey === 'customer' && !userInput.includes('@')) {
+      const digits = userInput.replace(/\D/g, '').slice(-10);
+      loginEmail = `${digits}@farmer.agrishield.in`;
+    }
+    const { data, error } = await sb.auth.signInWithPassword({ email: loginEmail, password: passInput });
+    if (error || !data.user) {
+      errEl.textContent = error?.message || 'Invalid email or password.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    const { data: prof } = await sb.from('profiles').select('*').eq('id', data.user.id).maybeSingle();
+    const dbRole = prof?.role || roleKey;
+    const baseRole = ROLES[dbRole] || ROLES[roleKey];
+    const sessionUser = {
+      ...baseRole,
+      name: prof?.full_name || data.user.email,
+      email: data.user.email,
+      customerId: prof?.customer_id || null,
+      initials: (prof?.full_name || data.user.email || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+    };
+    await syncFromSupabase();
+    subscribeRealtime();
+    completeLogin(sessionUser);
+    return;
+  }
+
+  if (roleKey === 'customer') {
+    const cust = state.data.customers.find(c =>
+      (c.phone === userInput || (c.email && c.email.toLowerCase() === userInput.toLowerCase())) &&
+      c.password === passInput
+    );
+    if (!cust) {
+      errEl.textContent = 'Invalid mobile number or password. Please check the credentials given by your Store Admin or register below.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    setActiveCustomerUser(cust.id);
+    completeLogin(ROLES.customer);
+    return;
+  }
+
+  const roleMap = {
+    owner: ['Shop Owner'],
+    admin: ['Admin / Manager'],
+    staff: ['Staff / Cashier', 'Staff / Warehouse']
+  };
+  const allowedRoleNames = roleMap[roleKey] || [];
+  const member = state.data.staffList.find(s =>
+    allowedRoleNames.includes(s.role) &&
+    (s.email.toLowerCase() === userInput.toLowerCase() || s.phone === userInput) &&
+    s.password === passInput
+  );
+
+  if (!member) {
+    errEl.textContent = 'Invalid Email/Mobile or Password for the selected role. Please contact your Store Admin.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (member.status !== 'Active') {
+    errEl.textContent = 'This account is currently inactive. Please contact your Shop Owner or Admin.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  const sessionUser = {
+    ...ROLES[roleKey],
+    name: member.name,
+    email: member.email,
+    initials: member.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+  };
+  completeLogin(sessionUser);
+}
+
+function completeLogin(userObj) {
+  state.currentUser = userObj;
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app-shell').classList.remove('hidden');
+  updateUserHeader();
+  navigate('dashboard');
+  showToast(`Signed in as ${state.currentUser.name} (${state.currentUser.label})`, 'success');
+}
+
+async function logout() {
+  if (USE_SUPABASE && sb) {
+    try { await sb.auth.signOut(); } catch (e) {}
+    if (realtimeChannel) { try { sb.removeChannel(realtimeChannel); } catch (e) {} realtimeChannel = null; }
+  }
+  state.currentUser = null;
+  document.getElementById('login-username').value = '';
+  document.getElementById('login-pin').value = '';
+  const errEl = document.getElementById('login-error');
+  if (errEl) { errEl.classList.add('hidden'); errEl.textContent = ''; }
+  document.getElementById('app-shell').classList.add('hidden');
+  document.getElementById('login-screen').classList.remove('hidden');
+  if (window.lucide) lucide.createIcons();
+}
+
+function updateUserHeader() {
+  const u = state.currentUser;
+  document.getElementById('user-avatar').textContent = u.initials;
+  document.getElementById('user-display-name').textContent = u.name;
+  document.getElementById('user-role-label').textContent = u.label;
+  document.getElementById('mobile-role-badge').textContent = u.label;
+
+  document.querySelectorAll('.role-switch-pill').forEach(btn => {
+    const active = btn.dataset.pill === u.key;
+    btn.className = active
+      ? 'role-switch-pill py-1.5 rounded text-[11px] font-semibold bg-emerald-600 text-white cursor-pointer'
+      : 'role-switch-pill py-1.5 rounded text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer';
+  });
+
+  const topActions = document.getElementById('topbar-actions');
+  if (topActions) {
+    if (u.key === 'customer') {
+      topActions.innerHTML = `
+        <button type="button" onclick="navigate('payments')" class="px-3.5 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition">
+          <i data-lucide="qr-code" class="w-4 h-4"></i>
+          <span>Pay Due via UPI QR</span>
+        </button>
+        <button type="button" onclick="navigate('inventory')" class="px-3.5 py-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition">
+          <i data-lucide="package" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Browse Products</span>
+        </button>
+      `;
+    } else {
+      topActions.innerHTML = `
+        <button type="button" onclick="navigate('pos')" class="px-3.5 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>New Bill / Invoice</span>
+        </button>
+        <button type="button" onclick="navigate('reminders')" class="px-3.5 py-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition">
+          <i data-lucide="message-square" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Send Reminders</span>
+        </button>
+      `;
+    }
+  }
+}
+
+const NAV_ITEMS = [
+  { id: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard', perm: 'dashboard' },
+  { id: 'inventory', label: 'Items & Stock', icon: 'package', perm: 'inventory' },
+  { id: 'pos', label: 'POS & Billing', icon: 'shopping-cart', perm: 'pos' },
+  { id: 'customers', label: 'Customers', icon: 'users', perm: 'customers' },
+  { id: 'payments', label: 'Payments', icon: 'indian-rupee', perm: 'payments' },
+  { id: 'invoices', label: 'Invoices', icon: 'file-text', perm: 'invoices' },
+  { id: 'yearly', label: 'Yearly List', icon: 'calendar-range', perm: 'yearly' },
+  { id: 'reminders', label: 'WhatsApp Alerts', icon: 'message-square', perm: 'reminders' },
+  { id: 'staff', label: 'Staff & Roles', icon: 'shield', perm: 'staff' }
+];
+
+function renderSidebar() {
+  const nav = document.getElementById('sidebar-nav');
+  nav.innerHTML = NAV_ITEMS.filter(n => hasPerm(n.perm)).map(item => {
+    const active = state.activeView === item.id;
+    return `
+      <button type="button" onclick="navigate('${item.id}')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition cursor-pointer ${
+        active ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+      }">
+        <i data-lucide="${item.icon}" class="w-4 h-4 shrink-0"></i>
+        <span>${item.label}</span>
+      </button>
+    `;
+  }).join('');
+  if (window.lucide) lucide.createIcons();
+}
+
+function navigate(viewId) {
+  state.activeView = viewId;
+  // Close mobile sidebar if open
+  const sb = document.getElementById('sidebar');
+  if (window.innerWidth < 1024) sb.classList.add('hidden');
+  renderSidebar();
+  renderCurrentView();
+}
+
+function destroyCharts() {
+  Object.values(chartInstances).forEach(c => { try { c.destroy(); } catch(e){} });
+  chartInstances = {};
+}
+
+function renderCurrentView() {
+  destroyCharts();
+  const titles = {
+    dashboard: ['Executive Dashboard', 'Live store overview, stock availability, and receivables'],
+    inventory: ['Pesticide Inventory & Stock', 'Track SKU quantities, batch numbers, expiry dates & reorder levels'],
+    pos: ['POS Billing & Checkout', 'Create GST bills, update live stock, and record payments'],
+    customers: ['Farmer & Dealer Directory', 'Manage customer profiles, crop types, and credit balances'],
+    payments: ['Payments & Collections', 'Track cash, UPI, card, and pending credit receivables'],
+    invoices: ['GST Tax Invoices', 'View, print, or share itemized agrochemical tax invoices'],
+    yearly: ['Yearly Wise Product & Sales List', 'View annual agrochemical records; Owner & Staff can add or edit'],
+    reminders: ['WhatsApp Reminders', 'Dispatch payment due alerts and crop spray schedules via WhatsApp'],
+    staff: ['Staff, Admin & Owner Access', 'Manage store team members and role-based permissions']
+  };
+  const [t, s] = titles[state.activeView] || ['AgriShield Pro', ''];
+  document.getElementById('page-title').textContent = t;
+  document.getElementById('page-subtitle').textContent = s;
+
+  const container = document.getElementById('view-container');
+  switch (state.activeView) {
+    case 'dashboard': renderDashboard(container); break;
+    case 'inventory': renderInventory(container); break;
+    case 'pos': renderPOS(container); break;
+    case 'customers': renderCustomers(container); break;
+    case 'payments': renderPayments(container); break;
+    case 'invoices': renderInvoices(container); break;
+    case 'yearly': renderYearly(container); break;
+    case 'reminders': renderReminders(container); break;
+    case 'staff': renderStaff(container); break;
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+// ============================================================================
+// 5. DASHBOARD VIEW
+// ============================================================================
+function renderCustomerDashboard(container) {
+  const cid = state.currentUser.customerId || 'C001';
+  const cust = state.data.customers.find(c => c.id === cid) || state.data.customers[0];
+  const myInvoices = state.data.invoices.filter(i => i.customerId === cust.id);
+  const myReminders = state.data.reminders.filter(r => r.customerName === cust.name);
+  const inStockCount = state.data.inventory.filter(i => i.stock > 0).length;
+
+  container.innerHTML = `
+    <div class="bg-gradient-to-r from-emerald-800 to-emerald-700 rounded-2xl p-6 text-white shadow-sm flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <div class="text-xs uppercase tracking-wider text-emerald-200 font-semibold">Farmer / Customer Portal</div>
+        <h3 class="text-xl font-bold mt-1">Welcome, ${escapeHtml(cust.name)}</h3>
+        <p class="text-xs text-emerald-100 mt-1">${escapeHtml(cust.village)} • Crops: ${escapeHtml(cust.crop)} • +91 ${escapeHtml(cust.phone)}</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <button type="button" onclick="openEditCustomerModal('${cust.id}')" class="px-3 py-2 rounded-xl bg-emerald-900/60 hover:bg-emerald-900 border border-emerald-400/40 text-white text-xs font-semibold cursor-pointer">
+          Edit Profile
+        </button>
+        ${cust.due > 0 ? `
+          <button type="button" onclick="navigate('payments')" class="px-4 py-2 rounded-xl bg-white text-emerald-900 font-bold text-xs shadow-sm hover:bg-emerald-50 flex items-center gap-2 cursor-pointer">
+            <i data-lucide="qr-code" class="w-4 h-4"></i>
+            <span>Pay Due (${fmtINR(cust.due)})</span>
+          </button>
+        ` : '<span class="px-3 py-1.5 rounded-full bg-emerald-600/60 border border-emerald-400/40 text-xs font-semibold">All Dues Cleared ✓</span>'}
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+        <div class="text-xs font-semibold text-slate-500 uppercase">My Total Purchases</div>
+        <div class="text-2xl font-bold text-slate-900 mt-1 tabular-nums">${fmtINR(cust.totalSpent)}</div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+        <div class="text-xs font-semibold text-slate-500 uppercase">My Pending Due</div>
+        <div class="text-2xl font-bold ${cust.due > 0 ? 'text-rose-600' : 'text-emerald-700'} mt-1 tabular-nums">${fmtINR(cust.due)}</div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+        <div class="text-xs font-semibold text-slate-500 uppercase">My Invoices</div>
+        <div class="text-2xl font-bold text-slate-900 mt-1 tabular-nums">${myInvoices.length}</div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+        <div class="text-xs font-semibold text-slate-500 uppercase">Products Available</div>
+        <div class="text-2xl font-bold text-emerald-700 mt-1 tabular-nums">${inStockCount} SKUs</div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-slate-900">My Recent Invoices</h3>
+          <button type="button" onclick="navigate('invoices')" class="text-xs font-semibold text-emerald-700 hover:underline cursor-pointer">View All →</button>
+        </div>
+        <div class="divide-y divide-slate-100">
+          ${myInvoices.map(inv => `
+            <div class="py-2.5 flex items-center justify-between gap-2 text-xs">
+              <div>
+                <div class="font-bold text-slate-900">${escapeHtml(inv.id)}</div>
+                <div class="text-[11px] text-slate-500">${inv.date} • ${inv.items.length} item(s)</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold tabular-nums">${fmtINR(inv.total)}</span>
+                <button type="button" onclick="openInvoiceModal('${inv.id}')" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-emerald-700 hover:text-white font-semibold cursor-pointer">View</button>
+              </div>
+            </div>
+          `).join('') || '<p class="text-xs text-slate-500 py-4 text-center">No invoices yet.</p>'}
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-slate-900">My Store Alerts &amp; Spray Reminders</h3>
+          <button type="button" onclick="navigate('reminders')" class="text-xs font-semibold text-emerald-700 hover:underline cursor-pointer">View All →</button>
+        </div>
+        <div class="divide-y divide-slate-100">
+          ${myReminders.map(r => `
+            <div class="py-2.5 text-xs">
+              <div class="flex items-center justify-between">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${r.channel==='WhatsApp'?'bg-emerald-100 text-emerald-800':'bg-blue-100 text-blue-800'}">${r.channel}</span>
+                <span class="text-[11px] text-slate-400">${r.date}</span>
+              </div>
+              <p class="text-slate-700 mt-1">${escapeHtml(r.message)}</p>
+            </div>
+          `).join('') || '<p class="text-xs text-slate-500 py-4 text-center">No notifications yet.</p>'}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderDashboard(container) {
+  if (state.currentUser && state.currentUser.key === 'customer') {
+    return renderCustomerDashboard(container);
+  }
+  const inv = state.data.inventory;
+  const custs = state.data.customers;
+  const invoices = state.data.invoices;
+  const totalItems = inv.length;
+  const totalUnits = inv.reduce((a, b) => a + b.stock, 0);
+  const lowOrOut = inv.filter(i => i.stock <= i.reorder).length;
+  const totalCustomers = custs.length;
+  const totalDue = custs.reduce((a, c) => a + c.due, 0);
+  const totalRevenue = invoices.reduce((a, i) => a + i.total, 0);
+  const totalCollected = invoices.reduce((a, i) => a + i.paid, 0);
+
+  // Owner-only estimated profit margin
+  let estProfit = 0;
+  invoices.forEach(invRec => {
+    invRec.items.forEach(line => {
+      const prod = inv.find(p => p.id === line.id);
+      if (prod) estProfit += (prod.mrp - prod.costPrice) * line.qty;
+    });
+  });
+
+  container.innerHTML = `
+    <!-- KPI Row -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Items &amp; Stock</span>
+          <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center"><i data-lucide="package" class="w-4 h-4"></i></div>
+        </div>
+        <div class="text-2xl font-bold text-slate-900 tabular-nums">${totalItems} SKUs</div>
+        <div class="text-xs text-slate-500 mt-1">${totalUnits} units available • <span class="text-amber-600 font-semibold">${lowOrOut} low/out alerts</span></div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Customers</span>
+          <div class="w-9 h-9 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center"><i data-lucide="users" class="w-4 h-4"></i></div>
+        </div>
+        <div class="text-2xl font-bold text-slate-900 tabular-nums">${totalCustomers} Farmers</div>
+        <div class="text-xs text-slate-500 mt-1">${custs.filter(c => c.due > 0).length} active credit accounts</div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Payments &amp; Revenue</span>
+          <div class="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center"><i data-lucide="indian-rupee" class="w-4 h-4"></i></div>
+        </div>
+        <div class="text-2xl font-bold text-slate-900 tabular-nums">${fmtINR(totalRevenue)}</div>
+        <div class="text-xs text-slate-500 mt-1">Collected: <span class="text-emerald-700 font-semibold">${fmtINR(totalCollected)}</span> • Due: <span class="text-rose-600 font-semibold">${fmtINR(totalDue)}</span></div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">${hasPerm('profit_view') ? 'Est. Gross Margin (Owner)' : 'Invoices &amp; Reminders'}</span>
+          <div class="w-9 h-9 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center"><i data-lucide="${hasPerm('profit_view') ? 'trending-up' : 'file-text'}" class="w-4 h-4"></i></div>
+        </div>
+        ${hasPerm('profit_view')
+          ? `<div class="text-2xl font-bold text-emerald-700 tabular-nums">${fmtINR(estProfit)}</div>
+             <div class="text-xs text-slate-500 mt-1">${invoices.length} GST invoices • ${state.data.reminders.length} reminders sent</div>`
+          : `<div class="text-2xl font-bold text-slate-900 tabular-nums">${invoices.length} Invoices</div>
+             <div class="text-xs text-slate-500 mt-1">${state.data.reminders.length} WhatsApp reminders sent</div>`
+        }
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <div class="lg:col-span-7 bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-sm font-bold text-slate-900">Stock Availability by Category</h3>
+            <p class="text-xs text-slate-500">Current units in stock across agrochemical types</p>
+          </div>
+          <button type="button" onclick="navigate('inventory')" class="text-xs font-semibold text-emerald-700 hover:underline cursor-pointer">Manage Stock →</button>
+        </div>
+        <div class="relative h-64">
+          <canvas id="chart-stock-cat"></canvas>
+        </div>
+      </div>
+
+      <div class="lg:col-span-5 bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-sm font-bold text-slate-900">Payment Mode Breakdown</h3>
+            <p class="text-xs text-slate-500">Collected vs. pending credit receivables</p>
+          </div>
+          <button type="button" onclick="navigate('payments')" class="text-xs font-semibold text-emerald-700 hover:underline cursor-pointer">View Ledger →</button>
+        </div>
+        <div class="relative h-64">
+          <canvas id="chart-payment-modes"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actionable Tables Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <!-- Low Stock Alerts -->
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600"></i>
+            <span>Low Stock &amp; Expiry Alerts</span>
+          </h3>
+          <button type="button" onclick="navigate('inventory')" class="text-xs font-semibold text-emerald-700 hover:underline cursor-pointer">View All</button>
+        </div>
+        <div class="divide-y divide-slate-100">
+          ${inv.filter(i => getStockStatus(i).key !== 'ok').slice(0, 5).map(item => {
+            const st = getStockStatus(item);
+            return `
+              <div class="py-2.5 flex items-center justify-between gap-3">
+                <div class="min-w-0">
+                  <div class="text-xs font-semibold text-slate-900 truncate">${escapeHtml(item.name)}</div>
+                  <div class="text-[11px] text-slate-500">Batch: ${escapeHtml(item.batch)} • Exp: ${item.expiry}</div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                  <span class="text-xs font-bold tabular-nums">${item.stock} left</span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border ${st.cls}">${st.label}</span>
+                </div>
+              </div>
+            `;
+          }).join('') || '<p class="text-xs text-slate-500 py-4 text-center">All items are well stocked.</p>'}
+        </div>
+      </div>
+
+      <!-- Pending Customer Dues (Quick Reminder) -->
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="bell-ring" class="w-4 h-4 text-rose-600"></i>
+            <span>Pending Dues &amp; Quick Reminders</span>
+          </h3>
+          <button type="button" onclick="navigate('reminders')" class="text-xs font-semibold text-emerald-700 hover:underline cursor-pointer">Reminder Center</button>
+        </div>
+        <div class="divide-y divide-slate-100">
+          ${custs.filter(c => c.due > 0).map(c => `
+            <div class="py-2.5 flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="text-xs font-semibold text-slate-900">${escapeHtml(c.name)} <span class="text-slate-400 font-normal">(${escapeHtml(c.village)})</span></div>
+                <div class="text-[11px] text-slate-500">+91 ${c.phone} • Due: <strong class="text-rose-600">${fmtINR(c.due)}</strong></div>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button type="button" onclick="quickSendReminder('${c.id}', 'WhatsApp')" class="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-semibold cursor-pointer">Send WhatsApp</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Render Charts
+  const catMap = {};
+  inv.forEach(i => { catMap[i.category] = (catMap[i.category] || 0) + i.stock; });
+  chartInstances.stockCat = new Chart(document.getElementById('chart-stock-cat'), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(catMap),
+      datasets: [{
+        label: 'Units in Stock',
+        data: Object.values(catMap),
+        backgroundColor: ['#059669', '#0284c7', '#d97706', '#16a34a', '#7c3aed'],
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } }
+    }
+  });
+
+  const payStats = { UPI: 0, Cash: 0, Card: 0, 'Pending Due': totalDue };
+  state.data.payments.forEach(p => {
+    if (payStats[p.method] !== undefined) payStats[p.method] += p.amount;
+    else payStats.UPI += p.amount;
+  });
+  chartInstances.payModes = new Chart(document.getElementById('chart-payment-modes'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(payStats),
+      datasets: [{
+        data: Object.values(payStats),
+        backgroundColor: ['#059669', '#0284c7', '#6366f1', '#e11d48'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
+    }
+  });
+}
+
+// ============================================================================
+// 6. INVENTORY & STOCK AVAILABILITY VIEW
+// ============================================================================
+function renderInventory(container) {
+  const f = state.inventoryFilter;
+  const categories = ['All', ...new Set(state.data.inventory.map(i => i.category))];
+  const filtered = state.data.inventory.filter(item => {
+    const matchSearch = !f.search || item.name.toLowerCase().includes(f.search.toLowerCase()) || item.sku.toLowerCase().includes(f.search.toLowerCase()) || item.brand.toLowerCase().includes(f.search.toLowerCase());
+    const matchCat = f.category === 'All' || item.category === f.category;
+    const st = getStockStatus(item).key;
+    const matchStatus = f.stockStatus === 'All' || (f.stockStatus === 'low' && (st === 'low' || st === 'out')) || (f.stockStatus === 'ok' && st === 'ok');
+    return matchSearch && matchCat && matchStatus;
+  });
+
+  container.innerHTML = `
+    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
+      <div class="flex flex-wrap items-center gap-2.5 flex-1 min-w-[240px]">
+        <form onsubmit="event.preventDefault(); state.inventoryFilter.search=document.getElementById('inv-search').value; renderCurrentView();" class="flex items-center gap-1.5 flex-1 min-w-[240px] max-w-sm">
+          <div class="relative flex-1">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+            <input id="inv-search" type="text" placeholder="Search pesticide, SKU, brand..." value="${escapeHtml(f.search)}" class="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          </div>
+          <button type="submit" class="px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold cursor-pointer shrink-0">Search</button>
+          ${f.search ? `<button type="button" onclick="state.inventoryFilter.search=''; renderCurrentView();" class="px-2.5 py-2 rounded-lg border border-slate-300 text-xs text-slate-600 hover:bg-slate-50 cursor-pointer shrink-0">Clear</button>` : ''}
+        </form>
+        <select onchange="state.inventoryFilter.category=this.value; renderCurrentView();" class="px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white">
+          ${categories.map(c => `<option value="${c}" ${f.category === c ? 'selected' : ''}>Category: ${c}</option>`).join('')}
+        </select>
+        <select onchange="state.inventoryFilter.stockStatus=this.value; renderCurrentView();" class="px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white">
+          <option value="All" ${f.stockStatus === 'All' ? 'selected' : ''}>All Stock Status</option>
+          <option value="ok" ${f.stockStatus === 'ok' ? 'selected' : ''}>In Stock</option>
+          <option value="low" ${f.stockStatus === 'low' ? 'selected' : ''}>Low / Out of Stock</option>
+        </select>
+      </div>
+      ${hasPerm('edit_item') ? `
+        <button type="button" onclick="openAddItemModal()" class="px-3.5 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Add Pesticide Item</span>
+        </button>
+      ` : '<span class="text-xs text-slate-500 italic">View-only catalog mode</span>'}
+    </div>
+
+    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
+      <form onsubmit="event.preventDefault(); state.paymentSearch=document.getElementById('pay-search-input').value; renderCurrentView();" class="flex items-center gap-1.5 flex-1 min-w-[240px] max-w-md">
+        <div class="relative flex-1">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+          <input id="pay-search-input" type="text" placeholder="Search payment ID, customer, invoice..." value="${escapeHtml(state.paymentSearch)}" class="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        </div>
+        <button type="submit" class="px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold cursor-pointer shrink-0">Search</button>
+        ${state.paymentSearch ? `<button type="button" onclick="state.paymentSearch=''; renderCurrentView();" class="px-2.5 py-2 rounded-lg border border-slate-300 text-xs text-slate-600 cursor-pointer shrink-0">Clear</button>` : ''}
+      </form>
+    </div>
+
+    <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+              <th class="px-4 py-3">Item &amp; SKU</th>
+              <th class="px-4 py-3">Category</th>
+              <th class="px-4 py-3">Batch &amp; Expiry</th>
+              <th class="px-4 py-3 text-right">Stock Available</th>
+              <th class="px-4 py-3 text-right">MRP (GST)</th>
+              <th class="px-4 py-3">Status</th>
+              <th class="px-4 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 text-xs">
+            ${filtered.map(item => {
+              const st = getStockStatus(item);
+              return `
+                <tr class="hover:bg-slate-50/80">
+                  <td class="px-4 py-3">
+                    <div class="flex items-center gap-3">
+                      ${getProductThumb(item)}
+                      <div>
+                        <div class="font-semibold text-slate-900">${escapeHtml(item.name)}</div>
+                        <div class="text-[11px] text-slate-500">${escapeHtml(item.sku)} • ${escapeHtml(item.brand)} • HSN ${item.hsn}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3 text-slate-700">${escapeHtml(item.category)}</td>
+                  <td class="px-4 py-3">
+                    <div class="font-medium text-slate-800">${escapeHtml(item.batch)}</div>
+                    <div class="text-[11px] text-slate-500">Exp: ${item.expiry}</div>
+                  </td>
+                  <td class="px-4 py-3 text-right">
+                    <div class="font-bold text-slate-900 tabular-nums">${item.stock}</div>
+                    <div class="text-[11px] text-slate-500">${escapeHtml(item.unit)}</div>
+                  </td>
+                  <td class="px-4 py-3 text-right">
+                    <div class="font-semibold text-slate-900 tabular-nums">${fmtINR(item.mrp)}</div>
+                    <div class="text-[11px] text-slate-500">${item.gst}% GST</div>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border ${st.cls}">${st.label}</span>
+                  </td>
+                  <td class="px-4 py-3 text-right space-x-1 whitespace-nowrap">
+                    ${state.currentUser && state.currentUser.key === 'customer' ? (item.stock > 0 ? `<button type="button" onclick="openCustomerOrderModal('${item.id}')" class="px-2.5 py-1 rounded bg-emerald-700 hover:bg-emerald-800 text-white font-semibold cursor-pointer">Order / Buy</button>` : '<span class="text-slate-400">Out of Stock</span>') : ''}
+                    ${hasPerm('edit_item') ? `<button type="button" onclick="openEditItemModal('${item.id}')" class="px-2 py-1 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold cursor-pointer">Edit</button>` : ''}
+                    ${hasPerm('edit_item') ? `<button type="button" onclick="openRestockModal('${item.id}')" class="px-2 py-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold cursor-pointer">+ Stock</button>` : ''}
+                    ${hasPerm('delete_item') ? `<button type="button" onclick="deleteItem('${item.id}')" class="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold cursor-pointer">Delete</button>` : ''}
+                  </td>
+                </tr>
+              `;
+            }).join('') || `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-500">No items match your filter.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function openAddItemModal() {
+  openModal(`
+    <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+      <h3 class="text-base font-bold text-slate-900">Add New Pesticide / Agro Item</h3>
+      <button type="button" onclick="closeModal()" class="text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+    </div>
+    <form onsubmit="submitAddItem(event)" class="p-6 space-y-4 text-xs">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Product Name</label>
+          <input id="new-item-name" required placeholder="e.g. Bavistin (Carbendazim 50% WP)" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">SKU Code</label>
+          <input id="new-item-sku" required placeholder="e.g. FUN-340" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Category</label>
+          <select id="new-item-cat" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
+            <option>Insecticide</option><option>Fungicide</option><option>Herbicide</option><option>Bio-Pesticide</option><option>Micronutrient</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Brand / Manufacturer</label>
+          <input id="new-item-brand" required placeholder="e.g. BASF / Syngenta" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Batch Number</label>
+          <input id="new-item-batch" required value="B26-901" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Expiry Date</label>
+          <input id="new-item-exp" type="date" required value="2028-03-15" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Opening Stock Qty</label>
+          <input id="new-item-stock" type="number" min="0" required value="30" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Unit Pack</label>
+          <input id="new-item-unit" required value="500 ml Bottle" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Cost Price (₹)</label>
+          <input id="new-item-cost" type="number" min="1" required value="350" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Selling MRP (₹)</label>
+          <input id="new-item-mrp" type="number" min="1" required value="460" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-200">
+        <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold cursor-pointer">Cancel</button>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold cursor-pointer">Save Item</button>
+      </div>
+    </form>
+  `);
+}
+
+async function submitAddItem(e) {
+  e.preventDefault();
+  const newItem = {
+    id: 'P' + String(Date.now()).slice(-4),
+    sku: document.getElementById('new-item-sku').value.trim(),
+    name: document.getElementById('new-item-name').value.trim(),
+    category: document.getElementById('new-item-cat').value,
+    brand: document.getElementById('new-item-brand').value.trim(),
+    hsn: '38089199',
+    batch: document.getElementById('new-item-batch').value.trim(),
+    expiry: document.getElementById('new-item-exp').value,
+    stock: parseInt(document.getElementById('new-item-stock').value, 10) || 0,
+    unit: document.getElementById('new-item-unit').value.trim(),
+    reorder: 12,
+    costPrice: parseFloat(document.getElementById('new-item-cost').value) || 0,
+    mrp: parseFloat(document.getElementById('new-item-mrp').value) || 0,
+    gst: 18,
+    image: ''
+  };
+  const res = await sbWrite(s => s.from('inventory').insert({
+    sku: newItem.sku, name: newItem.name, category: newItem.category, brand: newItem.brand,
+    hsn: newItem.hsn, batch: newItem.batch, expiry: newItem.expiry, stock: newItem.stock,
+    unit: newItem.unit, reorder_level: newItem.reorder, cost_price: newItem.costPrice,
+    mrp: newItem.mrp, gst_percent: newItem.gst, image_url: ''
+  }));
+  if (!res.ok) return;
+  if (USE_SUPABASE) {
+    await syncFromSupabase();
+  } else {
+    state.data.inventory.unshift(newItem);
+    saveState();
+  }
+  closeModal();
+  renderCurrentView();
+  showToast(`Added "${newItem.name}" to inventory.`, 'success');
+}
+
+let tempEditImageData = null;
+
+function handleProductImageUpload(input, previewId) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    tempEditImageData = ev.target.result;
+    const imgEl = document.getElementById(previewId);
+    if (imgEl) {
+      imgEl.src = tempEditImageData;
+      imgEl.classList.remove('hidden');
+    }
+    const urlInput = document.getElementById('edit-item-img-url');
+    if (urlInput) urlInput.value = '';
+  };
+  reader.readAsDataURL(file);
+}
+
+function openEditItemModal(itemId) {
+  const item = state.data.inventory.find(i => i.id === itemId);
+  if (!item) return;
+  tempEditImageData = item.image || '';
+  openModal(`
+    <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+      <h3 class="text-base font-bold text-slate-900">Edit Product Details, Price &amp; Image</h3>
+      <button type="button" onclick="closeModal()" class="text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+    </div>
+    <form onsubmit="submitEditItem(event, '${item.id}')" class="p-6 space-y-4 text-xs max-h-[80vh] overflow-y-auto">
+      <div class="flex items-center gap-4 p-3 rounded-xl bg-slate-50 border border-slate-200">
+        <img id="edit-img-preview" src="${escapeHtml(item.image || '')}" alt="Preview" class="w-16 h-16 rounded-lg object-cover border border-slate-300 bg-white ${item.image ? '' : 'hidden'}" />
+        <div class="flex-1 space-y-2">
+          <label class="block font-semibold text-slate-700">Product Image (Upload or Paste URL)</label>
+          <div class="flex flex-wrap gap-2">
+            <input type="file" accept="image/*" onchange="handleProductImageUpload(this, 'edit-img-preview')" class="text-[11px] text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:bg-emerald-100 file:text-emerald-800 file:font-semibold cursor-pointer" />
+            <input id="edit-item-img-url" type="url" placeholder="Or paste https:// image URL..." value="${item.image && !item.image.startsWith('data:') ? escapeHtml(item.image) : ''}" oninput="tempEditImageData=this.value; const p=document.getElementById('edit-img-preview'); if(this.value){p.src=this.value; p.classList.remove('hidden');}" class="flex-1 min-w-[180px] px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs" />
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Product Name</label>
+          <input id="edit-item-name" required value="${escapeHtml(item.name)}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">SKU Code</label>
+          <input id="edit-item-sku" required value="${escapeHtml(item.sku)}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Category</label>
+          <select id="edit-item-cat" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
+            ${['Insecticide', 'Fungicide', 'Herbicide', 'Bio-Pesticide', 'Micronutrient'].map(c => `<option ${item.category===c?'selected':''}>${c}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Brand / Manufacturer</label>
+          <input id="edit-item-brand" required value="${escapeHtml(item.brand)}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Batch Number</label>
+          <input id="edit-item-batch" required value="${escapeHtml(item.batch)}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Expiry Date</label>
+          <input id="edit-item-exp" type="date" required value="${item.expiry}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Stock Quantity</label>
+          <input id="edit-item-stock" type="number" min="0" required value="${item.stock}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Unit Pack</label>
+          <input id="edit-item-unit" required value="${escapeHtml(item.unit)}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Selling Price / MRP (₹)</label>
+          <input id="edit-item-mrp" type="number" min="1" step="0.01" required value="${item.mrp}" class="w-full px-3 py-2 border border-slate-300 rounded-lg font-bold text-emerald-800" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">GST %</label>
+          <input id="edit-item-gst" type="number" min="0" max="28" required value="${item.gst}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        ${hasPerm('profit_view') ? `
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Cost Price (₹) (Owner)</label>
+          <input id="edit-item-cost" type="number" min="1" step="0.01" required value="${item.costPrice}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>` : ''}
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-200">
+        <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-lg border border-slate-300 font-semibold cursor-pointer">Cancel</button>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold cursor-pointer">Save Changes</button>
+      </div>
+    </form>
+  `);
+}
+
+function submitEditItem(e, itemId) {
+  e.preventDefault();
+  const item = state.data.inventory.find(i => i.id === itemId);
+  if (!item) return;
+  item.name = document.getElementById('edit-item-name').value.trim();
+  item.sku = document.getElementById('edit-item-sku').value.trim();
+  item.category = document.getElementById('edit-item-cat').value;
+  item.brand = document.getElementById('edit-item-brand').value.trim();
+  item.batch = document.getElementById('edit-item-batch').value.trim();
+  item.expiry = document.getElementById('edit-item-exp').value;
+  item.stock = parseInt(document.getElementById('edit-item-stock').value, 10) || 0;
+  item.unit = document.getElementById('edit-item-unit').value.trim();
+  item.mrp = parseFloat(document.getElementById('edit-item-mrp').value) || item.mrp;
+  item.gst = parseFloat(document.getElementById('edit-item-gst').value) || 0;
+  const costEl = document.getElementById('edit-item-cost');
+  if (costEl) item.costPrice = parseFloat(costEl.value) || item.costPrice;
+  if (tempEditImageData !== null) item.image = tempEditImageData;
+
+  saveState();
+  sbWrite(s => s.from('inventory').update({
+    name: item.name, sku: item.sku, category: item.category, brand: item.brand,
+    batch: item.batch, expiry: item.expiry, stock: item.stock, unit: item.unit,
+    mrp: item.mrp, gst_percent: item.gst, cost_price: item.costPrice, image_url: item.image || ''
+  }).eq('id', item.id));
+  closeModal();
+  renderCurrentView();
+  showToast(`Updated "${item.name}" details, price & image.`, 'success');
+}
+
+function openRestockModal(itemId) {
+  const item = state.data.inventory.find(i => i.id === itemId);
+  if (!item) return;
+  openModal(`
+    <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+      <h3 class="text-base font-bold text-slate-900">Restock Item</h3>
+      <button type="button" onclick="closeModal()" class="text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+    </div>
+    <form onsubmit="submitRestock(event, '${item.id}')" class="p-6 space-y-4 text-xs">
+      <div class="p-3 rounded-lg bg-slate-50 border border-slate-200">
+        <div class="font-bold text-slate-900">${escapeHtml(item.name)}</div>
+        <div class="text-slate-500 mt-0.5">Current Stock: <strong>${item.stock} ${escapeHtml(item.unit)}</strong></div>
+      </div>
+      <div>
+        <label class="block font-semibold text-slate-700 mb-1">Add Quantity (${escapeHtml(item.unit)})</label>
+        <input id="restock-qty" type="number" min="1" value="25" required class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-lg border border-slate-300 font-semibold cursor-pointer">Cancel</button>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-700 text-white font-semibold cursor-pointer">Update Stock</button>
+      </div>
+    </form>
+  `, 'max-w-md');
+}
+
+function submitRestock(e, itemId) {
+  e.preventDefault();
+  const qty = parseInt(document.getElementById('restock-qty').value, 10) || 0;
+  const item = state.data.inventory.find(i => i.id === itemId);
+  if (item && qty > 0) {
+    item.stock += qty;
+    saveState();
+    sbWrite(s => s.from('inventory').update({ stock: item.stock }).eq('id', item.id));
+    closeModal();
+    renderCurrentView();
+    showToast(`Restocked +${qty} units of ${item.name}`, 'success');
+  }
+}
+
+function openCustomerOrderModal(itemId) {
+  const item = state.data.inventory.find(i => i.id === itemId);
+  if (!item || item.stock <= 0) return;
+  openModal(`
+    <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+      <h3 class="text-base font-bold text-slate-900">Order Pesticide</h3>
+      <button type="button" onclick="closeModal()" class="text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+    </div>
+    <form onsubmit="submitCustomerOrder(event, '${item.id}')" class="p-6 space-y-4 text-xs">
+      <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
+        ${getProductThumb(item, 'w-12 h-12')}
+        <div>
+          <div class="font-bold text-slate-900 text-sm">${escapeHtml(item.name)}</div>
+          <div class="text-slate-500">${escapeHtml(item.unit)} • Price: <strong>${fmtINR(item.mrp)}</strong> (+${item.gst}% GST) • ${item.stock} available</div>
+        </div>
+      </div>
+      <div>
+        <label class="block font-semibold text-slate-700 mb-1">Quantity</label>
+        <input id="cust-order-qty" type="number" min="1" max="${item.stock}" value="1" required class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-lg border border-slate-300 font-semibold cursor-pointer">Cancel</button>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold cursor-pointer">Place Order &amp; Pay via UPI</button>
+      </div>
+    </form>
+  `, 'max-w-md');
+}
+
+function submitCustomerOrder(e, itemId) {
+  e.preventDefault();
+  const item = state.data.inventory.find(i => i.id === itemId);
+  const qty = Math.min(item.stock, Math.max(1, parseInt(document.getElementById('cust-order-qty').value, 10) || 1));
+  const cust = state.data.customers.find(c => c.id === state.currentUser.customerId) || state.data.customers[0];
+  const subtotal = item.mrp * qty;
+  const gstAmount = Math.round(subtotal * (item.gst / 100) * 100) / 100;
+  const total = Math.round(subtotal + gstAmount);
+
+  item.stock = Math.max(0, item.stock - qty);
+  const invNum = 'INV-2026-' + (1042 + state.data.invoices.length);
+  state.data.invoices.unshift({
+    id: invNum,
+    date: '2026-11-26',
+    customerId: cust.id,
+    customerName: cust.name,
+    customerPhone: cust.phone,
+    staff: 'Self-Service Order',
+    items: [{ id: item.id, name: item.name, hsn: item.hsn, batch: item.batch, qty, price: item.mrp, gst: item.gst }],
+    subtotal,
+    gstAmount,
+    discount: 0,
+    total,
+    paid: 0,
+    due: total,
+    method: 'UPI',
+    status: 'Pending'
+  });
+  cust.totalSpent += total;
+  cust.due += total;
+  cust.lastVisit = '2026-11-26';
+
+  state.scannerInvoiceId = invNum;
+  state.scannerAmount = String(total);
+  saveState();
+  closeModal();
+  showToast(`Order ${invNum} placed (${fmtINR(total)}). Scan UPI QR to pay!`, 'success');
+  navigate('payments');
+}
+
+function deleteItem(itemId) {
+  state.data.inventory = state.data.inventory.filter(i => i.id !== itemId);
+  saveState();
+  sbWrite(s => s.from('inventory').delete().eq('id', itemId));
+  renderCurrentView();
+  showToast('Item removed from inventory.', 'warning');
+}
+
+// ============================================================================
+// 7. POS & BILLING VIEW
+// ============================================================================
+function renderPOS(container) {
+  const pq = (state.posSearch || '').toLowerCase();
+  const availableItems = state.data.inventory.filter(i => i.stock > 0 && (!pq || i.name.toLowerCase().includes(pq) || i.sku.toLowerCase().includes(pq) || i.category.toLowerCase().includes(pq)));
+  const custs = state.data.customers;
+  if (custs.length > 0 && !custs.some(c => c.id === state.posCustomerId)) {
+    state.posCustomerId = custs[0].id;
+  }
+
+  let subtotal = 0;
+  let gstTotal = 0;
+  state.posCart.forEach(line => {
+    const lineSub = line.price * line.qty;
+    subtotal += lineSub;
+    gstTotal += lineSub * (line.gst / 100);
+  });
+  const discount = Number(state.posDiscount || 0);
+  const grandTotal = Math.max(0, Math.round(subtotal + gstTotal - discount));
+
+  container.innerHTML = `
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <!-- Product Picker -->
+      <div class="lg:col-span-7 bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <h3 class="text-sm font-bold text-slate-900">Select Pesticides to Bill</h3>
+          <form onsubmit="event.preventDefault(); state.posSearch=document.getElementById('pos-search-input').value; renderCurrentView();" class="flex items-center gap-1.5">
+            <input id="pos-search-input" type="text" placeholder="Search item..." value="${escapeHtml(state.posSearch)}" class="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs w-40 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            <button type="submit" class="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold cursor-pointer">Search</button>
+            ${state.posSearch ? `<button type="button" onclick="state.posSearch=''; renderCurrentView();" class="px-2 py-1.5 rounded-lg border border-slate-300 text-xs cursor-pointer">✕</button>` : ''}
+          </form>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[540px] overflow-y-auto pr-1">
+          ${availableItems.map(item => `
+            <div class="p-3 rounded-xl border border-slate-200 hover:border-emerald-500 transition flex flex-col justify-between gap-2">
+              <div class="flex items-start gap-2.5">
+                ${getProductThumb(item, 'w-10 h-10')}
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-start justify-between gap-2">
+                    <span class="text-xs font-bold text-slate-900 leading-snug">${escapeHtml(item.name)}</span>
+                    <span class="text-xs font-bold text-emerald-700 shrink-0">${fmtINR(item.mrp)}</span>
+                  </div>
+                  <div class="text-[11px] text-slate-500 mt-1">${escapeHtml(item.category)} • Stock: <strong>${item.stock}</strong> (${escapeHtml(item.unit)})</div>
+                </div>
+              </div>
+              <button type="button" onclick="addToCart('${item.id}')" class="w-full py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-700 hover:text-white text-emerald-800 text-xs font-semibold transition cursor-pointer">
+                + Add to Bill
+              </button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- Billing Cart & Checkout -->
+      <div class="lg:col-span-5 bg-white rounded-xl border border-slate-200 p-5 shadow-xs flex flex-col justify-between space-y-4">
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-900">Current GST Bill</h3>
+            <button type="button" onclick="state.posCart=[]; renderCurrentView();" class="text-xs text-rose-600 hover:underline cursor-pointer">Clear Cart</button>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">Select Farmer / Customer</label>
+            <select onchange="state.posCustomerId=this.value;" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white">
+              ${custs.map(c => `<option value="${c.id}" ${state.posCustomerId === c.id ? 'selected' : ''}>${escapeHtml(c.name)} (${escapeHtml(c.village)}) — Due: ${fmtINR(c.due)}</option>`).join('')}
+            </select>
+          </div>
+
+          <div class="border-t border-b border-slate-200 py-3 space-y-2 max-h-56 overflow-y-auto">
+            ${state.posCart.length === 0 ? '<p class="text-xs text-slate-400 text-center py-6">No items added yet. Click "+ Add to Bill" on the left.</p>' : state.posCart.map(line => `
+              <div class="flex items-center justify-between gap-2 text-xs">
+                <div class="min-w-0 flex-1">
+                  <div class="font-semibold text-slate-800 truncate">${escapeHtml(line.name)}</div>
+                  <div class="text-[11px] text-slate-500">${fmtINR(line.price)} × ${line.qty} (+${line.gst}% GST)</div>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <button type="button" onclick="updateCartQty('${line.id}', -1)" class="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 font-bold cursor-pointer">-</button>
+                  <span class="w-5 text-center font-semibold">${line.qty}</span>
+                  <button type="button" onclick="updateCartQty('${line.id}', 1)" class="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 font-bold cursor-pointer">+</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+          <div class="space-y-1.5 text-xs">
+            <div class="flex justify-between text-slate-600"><span>Subtotal</span><span class="tabular-nums">${fmtINR(subtotal)}</span></div>
+            <div class="flex justify-between text-slate-600"><span>CGST + SGST</span><span class="tabular-nums">${fmtINR(gstTotal)}</span></div>
+            <div class="flex justify-between items-center text-slate-600">
+              <span>Discount (₹)</span>
+              <input type="number" min="0" value="${discount}" onchange="state.posDiscount=this.value; renderCurrentView();" class="w-20 px-2 py-1 text-right border border-slate-300 rounded text-xs" />
+            </div>
+            <div class="flex justify-between text-base font-bold text-slate-900 pt-2 border-t border-slate-200">
+              <span>Grand Total</span>
+              <span class="tabular-nums text-emerald-700">${fmtINR(grandTotal)}</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 pt-1">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-600 mb-1">Payment Mode</label>
+              <select onchange="state.posPaymentMethod=this.value; renderCurrentView();" class="w-full px-2.5 py-2 rounded-lg border border-slate-300 text-xs bg-white">
+                <option value="UPI" ${state.posPaymentMethod==='UPI'?'selected':''}>UPI (GPay/PhonePe)</option>
+                <option value="Cash" ${state.posPaymentMethod==='Cash'?'selected':''}>Cash</option>
+                <option value="Card" ${state.posPaymentMethod==='Card'?'selected':''}>Card</option>
+                <option value="Credit (Udhaar)" ${state.posPaymentMethod==='Credit (Udhaar)'?'selected':''}>Credit (Udhaar)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-600 mb-1">Amount Paid Now (₹)</label>
+              <input id="pos-paid-input" type="number" min="0" max="${grandTotal}" value="${state.posPaymentMethod === 'Credit (Udhaar)' ? 0 : grandTotal}" class="w-full px-2.5 py-2 rounded-lg border border-slate-300 text-xs" />
+            </div>
+          </div>
+        </div>
+
+        <button type="button" onclick="completeSale(${subtotal}, ${gstTotal}, ${discount}, ${grandTotal})" ${state.posCart.length === 0 ? 'disabled' : ''} class="w-full py-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-300 text-white font-bold text-sm transition cursor-pointer">
+          Generate GST Invoice &amp; Complete Sale
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function addToCart(itemId) {
+  const item = state.data.inventory.find(i => i.id === itemId);
+  if (!item || item.stock <= 0) return;
+  const existing = state.posCart.find(c => c.id === itemId);
+  if (existing) {
+    if (existing.qty >= item.stock) {
+      showToast(`Only ${item.stock} units available in stock.`, 'warning');
+      return;
+    }
+    existing.qty += 1;
+  } else {
+    state.posCart.push({ id: item.id, name: item.name, hsn: item.hsn, batch: item.batch, qty: 1, price: item.mrp, gst: item.gst });
+  }
+  renderCurrentView();
+}
+
+function updateCartQty(itemId, delta) {
+  const idx = state.posCart.findIndex(c => c.id === itemId);
+  if (idx === -1) return;
+  const invItem = state.data.inventory.find(i => i.id === itemId);
+  const nextQty = state.posCart[idx].qty + delta;
+  if (nextQty <= 0) {
+    state.posCart.splice(idx, 1);
+  } else if (invItem && nextQty > invItem.stock) {
+    showToast(`Max available stock is ${invItem.stock}.`, 'warning');
+    return;
+  } else {
+    state.posCart[idx].qty = nextQty;
+  }
+  renderCurrentView();
+}
+
+async function completeSale(subtotal, gstTotal, discount, grandTotal) {
+  if (state.posCart.length === 0) return;
+  const cust = state.data.customers.find(c => c.id === state.posCustomerId) || state.data.customers[0] || {
+    id: null, name: 'Walk-in Customer', phone: '', totalSpent: 0, due: 0
+  };
+  const paidInput = document.getElementById('pos-paid-input');
+  const paid = Math.min(grandTotal, Math.max(0, Number(paidInput ? paidInput.value : grandTotal)));
+  const due = Math.max(0, grandTotal - paid);
+
+  // Decrement stock
+  state.posCart.forEach(line => {
+    const invItem = state.data.inventory.find(i => i.id === line.id);
+    if (invItem) invItem.stock = Math.max(0, invItem.stock - line.qty);
+  });
+
+  const invNum = 'INV-2026-' + String(Date.now()).slice(-5);
+  const newInv = {
+    id: invNum,
+    date: '2026-11-26',
+    customerId: cust.id,
+    customerName: cust.name,
+    customerPhone: cust.phone || '',
+    staff: state.currentUser ? state.currentUser.name : 'Store Staff',
+    items: JSON.parse(JSON.stringify(state.posCart)),
+    subtotal: Math.round(subtotal * 100) / 100,
+    gstAmount: Math.round(gstTotal * 100) / 100,
+    discount,
+    total: grandTotal,
+    paid,
+    due,
+    method: state.posPaymentMethod,
+    status: due === 0 ? 'Paid' : (paid > 0 ? 'Partial' : 'Pending')
+  };
+  state.data.invoices.unshift(newInv);
+
+  // Update customer ledger
+  cust.totalSpent = Number(cust.totalSpent || 0) + grandTotal;
+  cust.due = Number(cust.due || 0) + due;
+  cust.lastVisit = '2026-11-26';
+
+  // Record payment if > 0
+  let payRec = null;
+  if (paid > 0) {
+    payRec = {
+      id: 'PAY-' + String(Date.now()).slice(-5),
+      date: '2026-11-26',
+      invoiceId: invNum,
+      customerName: cust.name,
+      amount: paid,
+      method: state.posPaymentMethod,
+      ref: state.posPaymentMethod.toUpperCase().slice(0, 4) + '-' + String(Date.now()).slice(-6),
+      status: due === 0 ? 'Completed' : 'Partial'
+    };
+    state.data.payments.unshift(payRec);
+  }
+
+  state.posCart = [];
+  state.posDiscount = 0;
+  saveState();
+
+  const res = await sbWrite(async s => {
+    const invRes = await s.from('invoices').insert({
+      id: newInv.id, invoice_date: newInv.date,
+      customer_id: isUuid(cust.id) ? cust.id : null,
+      customer_name: cust.name,
+      customer_phone: cust.phone || '', staff_name: newInv.staff, subtotal: newInv.subtotal,
+      gst_amount: newInv.gstAmount, discount: newInv.discount, total: newInv.total,
+      paid: newInv.paid, due: newInv.due, method: newInv.method, status: newInv.status
+    });
+    if (invRes.error) return invRes;
+
+    for (const ln of newInv.items) {
+      await s.from('invoice_items').insert({
+        invoice_id: newInv.id,
+        product_id: isUuid(ln.id) ? ln.id : null,
+        product_name: ln.name,
+        hsn: ln.hsn, batch: ln.batch, qty: ln.qty, price: ln.price, gst_percent: ln.gst
+      });
+      const invObj = state.data.inventory.find(x => x.id === ln.id);
+      if (invObj && isUuid(ln.id)) await s.from('inventory').update({ stock: invObj.stock }).eq('id', ln.id);
+    }
+    if (isUuid(cust.id)) {
+      await s.from('customers').update({ total_spent: cust.totalSpent, due: cust.due, last_visit: cust.lastVisit }).eq('id', cust.id);
+    }
+    if (payRec) {
+      await s.from('payments').insert({
+        id: payRec.id, payment_date: payRec.date, invoice_id: invNum,
+        customer_id: isUuid(cust.id) ? cust.id : null,
+        customer_name: cust.name, amount: paid,
+        method: state.posPaymentMethod, txn_ref: payRec.ref, status: payRec.status
+      });
+    }
+    return { ok: true };
+  });
+
+  if (res.ok) {
+    showToast(`Invoice ${invNum} generated successfully!`, 'success');
+  }
+  openInvoiceModal(invNum);
+  renderCurrentView();
+}
+
+// ============================================================================
+// 8. CUSTOMERS VIEW
+// ============================================================================
+function renderCustomers(container) {
+  const q = state.customerSearch.toLowerCase();
+  const list = state.data.customers.filter(c => !q || c.name.toLowerCase().includes(q) || c.village.toLowerCase().includes(q) || c.phone.includes(q));
+
+  container.innerHTML = `
+    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
+      <form onsubmit="event.preventDefault(); state.customerSearch=document.getElementById('cust-search-input').value; renderCurrentView();" class="flex items-center gap-1.5 flex-1 min-w-[240px] max-w-md">
+        <div class="relative flex-1">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+          <input id="cust-search-input" type="text" placeholder="Search farmer, village, phone..." value="${escapeHtml(state.customerSearch)}" class="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        </div>
+        <button type="submit" class="px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold cursor-pointer shrink-0">Search</button>
+        ${state.customerSearch ? `<button type="button" onclick="state.customerSearch=''; renderCurrentView();" class="px-2.5 py-2 rounded-lg border border-slate-300 text-xs text-slate-600 cursor-pointer shrink-0">Clear</button>` : ''}
+      </form>
+      <button type="button" onclick="openAddCustomerModal()" class="px-3.5 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer">
+        <i data-lucide="user-plus" class="w-4 h-4"></i>
+        <span>Add Farmer / Customer</span>
+      </button>
+    </div>
+
+    <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+              <th class="px-4 py-3">Farmer Name &amp; Phone</th>
+              <th class="px-4 py-3">Village / Taluk</th>
+              <th class="px-4 py-3">Primary Crops</th>
+              <th class="px-4 py-3 text-right">Total Spent</th>
+              <th class="px-4 py-3 text-right">Pending Due</th>
+              <th class="px-4 py-3 text-right">Quick Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 text-xs">
+            ${list.map(c => `
+              <tr class="hover:bg-slate-50/80">
+                <td class="px-4 py-3">
+                  <div class="font-semibold text-slate-900">${escapeHtml(c.name)}</div>
+                  <div class="text-[11px] text-slate-500">+91 ${escapeHtml(c.phone)}</div>
+                </td>
+                <td class="px-4 py-3 text-slate-700">${escapeHtml(c.village)}</td>
+                <td class="px-4 py-3 text-slate-700">${escapeHtml(c.crop)}</td>
+                <td class="px-4 py-3 text-right font-semibold tabular-nums">${fmtINR(c.totalSpent)}</td>
+                <td class="px-4 py-3 text-right font-bold tabular-nums ${c.due > 0 ? 'text-rose-600' : 'text-emerald-700'}">${fmtINR(c.due)}</td>
+                <td class="px-4 py-3 text-right space-x-1 whitespace-nowrap">
+                  ${c.due > 0 ? `<button type="button" onclick="openSettleDueModal('${c.id}')" class="px-2 py-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold cursor-pointer">Pay Due</button>` : ''}
+                  <button type="button" onclick="openCustomerLedgerModal('${c.id}')" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer">Ledger</button>
+                  <button type="button" onclick="openEditCustomerModal('${c.id}')" class="px-2 py-1 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold cursor-pointer">Edit</button>
+                  <button type="button" onclick="quickSendReminder('${c.id}', 'WhatsApp')" class="px-2 py-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-semibold cursor-pointer">WhatsApp</button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function openCustomerSignupModal() {
+  openModal(`
+    <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+      <h3 class="text-base font-bold text-slate-900">New Customer / Farmer Registration</h3>
+      <button type="button" onclick="closeModal()" class="text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+    </div>
+    <form onsubmit="submitCustomerSignup(event)" class="p-6 space-y-4 text-xs">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Full Name</label>
+          <input id="signup-name" required placeholder="e.g. Veeresh Patil" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">WhatsApp / Mobile (10 digits)</label>
+          <input id="signup-phone" required placeholder="9845012345" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Village / Town</label>
+          <input id="signup-village" required placeholder="e.g. Mandya" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Primary Crops</label>
+          <input id="signup-crop" required placeholder="e.g. Paddy &amp; Sugarcane" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+      </div>
+      <div>
+        <label class="block font-semibold text-slate-700 mb-1">Create Login Password / PIN</label>
+        <input id="signup-pwd" type="password" required minlength="4" placeholder="Minimum 4 characters" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-200">
+        <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-lg border border-slate-300 font-semibold cursor-pointer">Cancel</button>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-700 text-white font-semibold cursor-pointer">Register &amp; Sign In</button>
+      </div>
+    </form>
+  `, 'max-w-lg');
+}
+
+function submitCustomerSignup(e) {
+  e.preventDefault();
+  const c = {
+    id: 'C' + String(Date.now()).slice(-4),
+    name: document.getElementById('signup-name').value.trim(),
+    phone: document.getElementById('signup-phone').value.trim(),
+    village: document.getElementById('signup-village').value.trim(),
+    crop: document.getElementById('signup-crop').value.trim(),
+    password: document.getElementById('signup-pwd').value.trim(),
+    totalSpent: 0,
+    due: 0,
+    lastVisit: '2026-11-26'
+  };
+  state.data.customers.unshift(c);
+  setActiveCustomerUser(c.id);
+  saveState();
+  closeModal();
+  completeLogin(ROLES.customer);
+}
+
+function openAddCustomerModal() {
+  openModal(`
+    <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+      <h3 class="text-base font-bold text-slate-900">Register Farmer / Customer</h3>
+      <button type="button" onclick="closeModal()" class="text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+    </div>
+    <form onsubmit="submitAddCustomer(event)" class="p-6 space-y-4 text-xs">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Full Name</label>
+          <input id="cust-name" required placeholder="e.g. Suresh Gowda" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">WhatsApp / Mobile (10 digits)</label>
+          <input id="cust-phone" required placeholder="9845012345" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Village / Town</label>
+          <input id="cust-village" required placeholder="e.g. Ramanagara" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Primary Crops</label>
+          <input id="cust-crop" required placeholder="e.g. Mango &amp; Ragi" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+      </div>
+      <div>
+        <label class="block font-semibold text-slate-700 mb-1">Customer Login Password / PIN (Share with customer)</label>
+        <input id="cust-pwd" type="text" required minlength="4" placeholder="Set login PIN / password" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-200">
+        <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-lg border border-slate-300 font-semibold cursor-pointer">Cancel</button>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-700 text-white font-semibold cursor-pointer">Save Customer</button>
+      </div>
+    </form>
+  `, 'max-w-lg');
+}
+
+async function submitAddCustomer(e) {
+  e.preventDefault();
+  const rawPhone = document.getElementById('cust-phone').value.replace(/\D/g, '').slice(-10);
+  const c = {
+    id: 'C' + String(Date.now()).slice(-4),
+    name: document.getElementById('cust-name').value.trim(),
+    phone: rawPhone || document.getElementById('cust-phone').value.trim(),
+    village: document.getElementById('cust-village').value.trim(),
+    crop: document.getElementById('cust-crop').value.trim(),
+    password: document.getElementById('cust-pwd').value.trim(),
+    totalSpent: 0,
+    due: 0,
+    lastVisit: '2026-11-26'
+  };
+  const res = await sbWrite(s => s.from('customers').insert({
+    name: c.name, phone: c.phone, village: c.village, crop: c.crop, total_spent: 0, due: 0
+  }).select().single());
+  if (!res.ok) return;
+  if (USE_SUPABASE && sbAuthHelper && res.data) {
+    const farmerEmail = `${c.phone}@farmer.agrishield.in`;
+    try {
+      const { data: authData, error: authErr } = await sbAuthHelper.auth.signUp({
+        email: farmerEmail,
+        password: c.password,
+        options: { data: { full_name: c.name } }
+      });
+      if (!authErr && authData?.user) {
+        await sb.from('profiles').upsert({
+          id: authData.user.id,
+          full_name: c.name,
+          email: farmerEmail,
+          phone: c.phone,
+          role: 'customer',
+          customer_id: res.data.id,
+          status: 'Active'
+        });
+      }
+    } catch (err) { console.error('Farmer auth creation error:', err); }
+    await syncFromSupabase();
+  } else {
+    state.data.customers.unshift(c);
+    saveState();
+  }
+  closeModal();
+  renderCurrentView();
+  showToast(`Customer "${c.name}" registered! They can sign in with Mobile ${c.phone} & assigned PIN.`, 'success');
+}
+
+function openEditCustomerModal(custId) {
+  const c = state.data.customers.find(x => x.id === custId);
+  if (!c) return;
+  openModal(`
+    <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+      <h3 class="text-base font-bold text-slate-900">Edit Customer Profile</h3>
+      <button type="button" onclick="closeModal()" class="text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+    </div>
+    <form onsubmit="submitEditCustomer(event, '${c.id}')" class="p-6 space-y-4 text-xs">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Full Name</label>
+          <input id="edit-cust-name" required value="${escapeHtml(c.name)}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">WhatsApp / Mobile</label>
+          <input id="edit-cust-phone" required value="${escapeHtml(c.phone)}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Village / Town</label>
+          <input id="edit-cust-village" required value="${escapeHtml(c.village)}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Primary Crops</label>
+          <input id="edit-cust-crop" required value="${escapeHtml(c.crop)}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+      </div>
+      <div>
+        <label class="block font-semibold text-slate-700 mb-1">Login Password / PIN</label>
+        <input id="edit-cust-pwd" type="text" required minlength="4" value="${escapeHtml(c.password || '')}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-200">
+        <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-lg border border-slate-300 font-semibold cursor-pointer">Cancel</button>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-700 text-white font-semibold cursor-pointer">Save Profile</button>
+      </div>
+    </form>
+  `, 'max-w-lg');
+}
+
+function submitEditCustomer(e, custId) {
+  e.preventDefault();
+  const c = state.data.customers.find(x => x.id === custId);
+  if (!c) return;
+  c.name = document.getElementById('edit-cust-name').value.trim();
+  c.phone = document.getElementById('edit-cust-phone').value.trim();
+  c.village = document.getElementById('edit-cust-village').value.trim();
+  c.crop = document.getElementById('edit-cust-crop').value.trim();
+  c.password = document.getElementById('edit-cust-pwd').value.trim();
+  if (state.currentUser && state.currentUser.key === 'customer' && state.currentUser.customerId === c.id) {
+    setActiveCustomerUser(c.id);
+    updateUserHeader();
+  }
+  saveState();
+  sbWrite(s => s.from('customers').update({ name: c.name, phone: c.phone, village: c.village, crop: c.crop }).eq('id', c.id));
+  closeModal();
+  renderCurrentView();
+  showToast('Customer profile updated.', 'success');
+}
+
+function openCustomerLedgerModal(custId) {
+  const c = state.data.customers.find(x => x.id === custId);
+  if (!c) return;
+  const invs = state.data.invoices.filter(i => i.customerId === c.id);
+  openModal(`
+    <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+      <div>
+        <h3 class="text-base font-bold text-slate-900">${escapeHtml(c.name)} — Ledger</h3>
+        <p class="text-[11px] text-slate-500">${escapeHtml(c.village)} • +91 ${escapeHtml(c.phone)} • Due: <strong class="text-rose-600">${fmtINR(c.due)}</strong></p>
+      </div>
+      <button type="button" onclick="closeModal()" class="text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+    </div>
+    <div class="p-6 max-h-[70vh] overflow-y-auto space-y-2 text-xs">
+      ${invs.map(i => `
+        <div class="p-3 rounded-lg border border-slate-200 flex items-center justify-between">
+          <div>
+            <div class="font-bold text-slate-900">${escapeHtml(i.id)} <span class="font-normal text-slate-500">(${i.date})</span></div>
+            <div class="text-[11px] text-slate-500">Total: ${fmtINR(i.total)} • Paid: ${fmtINR(i.paid)} • Due: <strong class="${i.due>0?'text-rose-600':'text-emerald-700'}">${fmtINR(i.due)}</strong></div>
+          </div>
+          <button type="button" onclick="openInvoiceModal('${i.id}')" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-emerald-700 hover:text-white font-semibold cursor-pointer">View Invoice</button>
+        </div>
+      `).join('') || '<p class="text-slate-500 text-center py-4">No invoices recorded yet.</p>'}
+    </div>
+  `);
+}
+
+function openSettleDueModal(custId) {
+  const c = state.data.customers.find(x => x.id === custId);
+  if (!c) return;
+  openModal(`
+    <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+      <h3 class="text-base font-bold text-slate-900">Record Due Payment</h3>
+      <button type="button" onclick="closeModal()" class="text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+    </div>
+    <form onsubmit="submitSettleDue(event, '${c.id}')" class="p-6 space-y-4 text-xs">
+      <div class="p-3 rounded-lg bg-slate-50 border border-slate-200">
+        <div class="font-bold text-slate-900">${escapeHtml(c.name)}</div>
+        <div class="text-rose-600 font-semibold mt-0.5">Outstanding Balance: ${fmtINR(c.due)}</div>
+      </div>
+      <div>
+        <label class="block font-semibold text-slate-700 mb-1">Amount Received (₹)</label>
+        <input id="settle-amt" type="number" min="1" max="${c.due}" value="${c.due}" required class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+      </div>
+      <div>
+        <label class="block font-semibold text-slate-700 mb-1">Payment Mode</label>
+        <select id="settle-mode" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
+          <option>UPI</option><option>Cash</option><option>Card</option>
+        </select>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-lg border border-slate-300 font-semibold cursor-pointer">Cancel</button>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-700 text-white font-semibold cursor-pointer">Confirm Payment</button>
+      </div>
+    </form>
+  `, 'max-w-md');
+}
+
+async function submitSettleDue(e, custId) {
+  e.preventDefault();
+  const c = state.data.customers.find(x => x.id === custId);
+  const amt = Math.min(c.due, Math.max(1, Number(document.getElementById('settle-amt').value)));
+  const mode = document.getElementById('settle-mode').value;
+  c.due = Math.max(0, c.due - amt);
+
+  // Apply payment to customer's pending/partial invoices
+  let remaining = amt;
+  const updatedInvs = [];
+  state.data.invoices.filter(i => i.customerId === c.id && i.due > 0).forEach(inv => {
+    if (remaining <= 0) return;
+    const payForInv = Math.min(inv.due, remaining);
+    inv.paid = Number(inv.paid || 0) + payForInv;
+    inv.due = Math.max(0, Number(inv.total) - inv.paid);
+    inv.status = inv.due === 0 ? 'Paid' : 'Partial';
+    remaining -= payForInv;
+    updatedInvs.push(inv);
+  });
+
+  const payRec = {
+    id: 'PAY-' + String(Date.now()).slice(-5),
+    date: '2026-11-26',
+    invoiceId: updatedInvs[0] ? updatedInvs[0].id : 'LEDGER-SETTLE',
+    customerName: c.name,
+    amount: amt,
+    method: mode,
+    ref: mode.toUpperCase() + '-' + String(Date.now()).slice(-6),
+    status: 'Completed'
+  };
+  state.data.payments.unshift(payRec);
+  saveState();
+  await sbWrite(async s => {
+    await s.from('customers').update({ due: c.due }).eq('id', c.id);
+    for (const inv of updatedInvs) {
+      await s.from('invoices').update({ paid: inv.paid, due: inv.due, status: inv.status }).eq('id', inv.id);
+    }
+    return s.from('payments').insert({
+      id: payRec.id, payment_date: payRec.date, invoice_id: payRec.invoiceId,
+      customer_id: c.id, customer_name: c.name, amount: amt, method: mode,
+      txn_ref: payRec.ref, status: 'Completed'
+    });
+  });
+  closeModal();
+  renderCurrentView();
+  showToast(`Recorded ${fmtINR(amt)} payment from ${c.name}.`, 'success');
+}
+
+// ============================================================================
+// 9. PAYMENTS & INVOICES VIEWS
+// ============================================================================
+function renderPayments(container) {
+  const totalCollected = state.data.payments.reduce((a, p) => a + p.amount, 0);
+  const totalPending = state.data.customers.reduce((a, c) => a + c.due, 0);
+  const pq = (state.paymentSearch || '').toLowerCase();
+  const bank = state.data.bankDetails || DEFAULT_DATA.bankDetails;
+  const isCust = state.currentUser && state.currentUser.key === 'customer';
+  const basePayments = isCust ? state.data.payments.filter(p => p.customerName === state.currentUser.name) : state.data.payments;
+  const list = basePayments.filter(p => {
+    const matchMode = state.paymentFilter === 'All' || p.method.includes(state.paymentFilter);
+    const matchSearch = !pq || p.id.toLowerCase().includes(pq) || p.customerName.toLowerCase().includes(pq) || p.invoiceId.toLowerCase().includes(pq) || p.method.toLowerCase().includes(pq);
+    return matchMode && matchSearch;
+  });
+
+  container.innerHTML = `
+    <!-- Store Bank & UPI Details Card -->
+    <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center"><i data-lucide="landmark" class="w-4 h-4"></i></div>
+          <div>
+            <h3 class="text-sm font-bold text-slate-900">Store Bank &amp; UPI Account Details</h3>
+            <p class="text-[11px] text-slate-500">Shown on GST invoices &amp; payment reminders</p>
+          </div>
+        </div>
+        ${hasPerm('edit_bank') ? `
+          <button type="button" onclick="openEditBankModal()" class="px-3.5 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+            <span>Edit Bank Details</span>
+          </button>
+        ` : ''}
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+        <div><span class="text-slate-500 block text-[10px] uppercase font-semibold">Bank Name</span><strong class="text-slate-900">${escapeHtml(bank.bankName)}</strong></div>
+        <div><span class="text-slate-500 block text-[10px] uppercase font-semibold">Account Holder</span><strong class="text-slate-900">${escapeHtml(bank.accountHolder)}</strong></div>
+        <div><span class="text-slate-500 block text-[10px] uppercase font-semibold">Account Number</span><strong class="text-slate-900 tabular-nums">${escapeHtml(bank.accountNumber)}</strong></div>
+        <div><span class="text-slate-500 block text-[10px] uppercase font-semibold">IFSC Code</span><strong class="text-slate-900">${escapeHtml(bank.ifsc)}</strong></div>
+        <div><span class="text-slate-500 block text-[10px] uppercase font-semibold">Branch</span><strong class="text-slate-900">${escapeHtml(bank.branch)}</strong></div>
+        <div><span class="text-slate-500 block text-[10px] uppercase font-semibold">UPI ID</span><strong class="text-emerald-700">${escapeHtml(bank.upiId)}</strong></div>
+      </div>
+    </div>
+
+    <!-- Merchant UPI Payment Scanner -->
+    <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center"><i data-lucide="qr-code" class="w-5 h-5"></i></div>
+          <div>
+            <h3 class="text-sm font-bold text-slate-900">Merchant Payment Scanner (UPI QR)</h3>
+            <p class="text-[11px] text-slate-500">Select an invoice to generate a live UPI QR code for the payable amount</p>
+          </div>
+        </div>
+        <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-semibold">GPay • PhonePe • Paytm • BHIM</span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
+        <div class="lg:col-span-7 space-y-3 text-xs">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Select Invoice to Pay</label>
+            <select id="scanner-invoice-select" onchange="selectScannerInvoice(this.value)" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              ${(state.currentUser && state.currentUser.key === 'customer'
+                ? state.data.invoices.filter(i => i.customerId === state.currentUser.customerId)
+                : state.data.invoices
+              ).map(inv => {
+                const activeInv = getActiveScannerInvoice();
+                const sel = activeInv && activeInv.id === inv.id;
+                return `<option value="${inv.id}" ${sel ? 'selected' : ''}>${escapeHtml(inv.id)} — ${escapeHtml(inv.customerName)} (${inv.due > 0 ? 'Due: ' + fmtINR(inv.due) : 'Total: ' + fmtINR(inv.total) + ' • Paid'})</option>`;
+              }).join('') || '<option value="">No invoices found</option>'}
+            </select>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Payable Amount (₹)</label>
+              <input id="scanner-amount-input" type="number" min="1" step="0.01" value="${escapeHtml(getScannerDefaultAmount())}" oninput="state.scannerAmount=this.value; updateMerchantQR();" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-bold text-emerald-800 text-sm" />
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Merchant UPI ID</label>
+              <input type="text" readonly value="${escapeHtml(bank.upiId)}" class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 font-medium" />
+            </div>
+          </div>
+
+          <div class="p-3 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-600 flex flex-wrap items-center justify-between gap-2">
+            <span>Paying to: <strong class="text-slate-900">${escapeHtml(bank.accountHolder)}</strong></span>
+            <span id="scanner-upi-uri-label" class="text-emerald-700 font-medium truncate max-w-xs"></span>
+          </div>
+
+          <div class="flex flex-wrap gap-2 pt-1">
+            <button type="button" onclick="confirmScannerPayment()" class="px-4 py-2.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold flex items-center gap-1.5 cursor-pointer transition">
+              <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+              <span>Confirm Payment Received</span>
+            </button>
+            <button type="button" onclick="updateMerchantQR()" class="px-3.5 py-2.5 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold cursor-pointer">
+              Refresh QR
+            </button>
+          </div>
+        </div>
+
+        <div class="lg:col-span-5 flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 border border-slate-200">
+          <div id="merchant-qr-box" class="bg-white p-3 rounded-xl border border-slate-200 shadow-xs flex items-center justify-center min-w-[164px] min-h-[164px]"></div>
+          <div id="merchant-qr-caption" class="text-xs font-bold text-slate-900 mt-2.5 text-center"></div>
+          <div class="text-[11px] text-slate-500 text-center">Scan with any UPI app to pay exact invoice amount</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+        <div class="text-xs font-semibold text-slate-500 uppercase">Total Collected</div>
+        <div class="text-2xl font-bold text-emerald-700 mt-1 tabular-nums">${fmtINR(totalCollected)}</div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+        <div class="text-xs font-semibold text-slate-500 uppercase">Pending Receivables</div>
+        <div class="text-2xl font-bold text-rose-600 mt-1 tabular-nums">${fmtINR(totalPending)}</div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs flex items-center justify-between">
+        <div>
+          <div class="text-xs font-semibold text-slate-500 uppercase">Filter by Mode</div>
+          <select onchange="state.paymentFilter=this.value; renderCurrentView();" class="mt-1.5 px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white">
+            <option value="All" ${state.paymentFilter==='All'?'selected':''}>All Modes</option>
+            <option value="UPI" ${state.paymentFilter==='UPI'?'selected':''}>UPI</option>
+            <option value="Cash" ${state.paymentFilter==='Cash'?'selected':''}>Cash</option>
+            <option value="Card" ${state.paymentFilter==='Card'?'selected':''}>Card</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+              <th class="px-4 py-3">Payment ID</th>
+              <th class="px-4 py-3">Date</th>
+              <th class="px-4 py-3">Customer</th>
+              <th class="px-4 py-3">Invoice Ref</th>
+              <th class="px-4 py-3">Method &amp; Txn Ref</th>
+              <th class="px-4 py-3 text-right">Amount</th>
+              <th class="px-4 py-3">Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 text-xs">
+            ${list.map(p => `
+              <tr class="hover:bg-slate-50/80">
+                <td class="px-4 py-3 font-semibold text-slate-900">${escapeHtml(p.id)}</td>
+                <td class="px-4 py-3 text-slate-600">${p.date}</td>
+                <td class="px-4 py-3 font-medium text-slate-900">${escapeHtml(p.customerName)}</td>
+                <td class="px-4 py-3 text-emerald-700 font-medium">${escapeHtml(p.invoiceId)}</td>
+                <td class="px-4 py-3 text-slate-600">${escapeHtml(p.method)} <span class="text-[11px] text-slate-400">(${escapeHtml(p.ref)})</span></td>
+                <td class="px-4 py-3 text-right font-bold tabular-nums">${fmtINR(p.amount)}</td>
+                <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${p.status==='Completed'?'bg-emerald-100 text-emerald-800':'bg-amber-100 text-amber-800'}">${p.status}</span></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function getActiveScannerInvoice() {
+  const pool = (state.currentUser && state.currentUser.key === 'customer')
+    ? state.data.invoices.filter(i => i.customerId === state.currentUser.customerId)
+    : state.data.invoices;
+  if (state.scannerInvoiceId) {
+    const found = pool.find(i => i.id === state.scannerInvoiceId);
+    if (found) return found;
+  }
+  return pool.find(i => i.due > 0) || pool[0] || null;
+}
+
+function getScannerDefaultAmount() {
+  if (state.scannerAmount !== '' && state.scannerAmount !== undefined) return state.scannerAmount;
+  const inv = getActiveScannerInvoice();
+  if (!inv) return 0;
+  return inv.due > 0 ? inv.due : inv.total;
+}
+
+function selectScannerInvoice(invId) {
+  state.scannerInvoiceId = invId;
+  const inv = state.data.invoices.find(i => i.id === invId);
+  const amt = inv ? (inv.due > 0 ? inv.due : inv.total) : 0;
+  state.scannerAmount = String(amt);
+  const amtInput = document.getElementById('scanner-amount-input');
+  if (amtInput) amtInput.value = amt;
+  updateMerchantQR();
+}
+
+function updateMerchantQR() {
+  const box = document.getElementById('merchant-qr-box');
+  if (!box) return;
+  const bank = state.data.bankDetails || DEFAULT_DATA.bankDetails;
+  const inv = getActiveScannerInvoice();
+  const amtInput = document.getElementById('scanner-amount-input');
+  const amt = Number(amtInput ? amtInput.value : getScannerDefaultAmount()) || 0;
+  const invId = inv ? inv.id : 'DIRECT';
+  const upiUri = `upi://pay?pa=${encodeURIComponent(bank.upiId)}&pn=${encodeURIComponent(bank.accountHolder)}&am=${amt.toFixed(2)}&cu=INR&tn=${encodeURIComponent('Invoice ' + invId)}`;
+
+  box.innerHTML = '';
+  if (window.QRCode) {
+    new QRCode(box, {
+      text: upiUri,
+      width: 148,
+      height: 148,
+      colorDark: '#064e3b',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  } else {
+    box.innerHTML = `<div class="text-xs text-slate-500 p-4 text-center">QR Ready<br/>${fmtINR(amt)}</div>`;
+  }
+
+  const cap = document.getElementById('merchant-qr-caption');
+  if (cap) cap.textContent = `${fmtINR(amt)} • ${invId}`;
+  const lbl = document.getElementById('scanner-upi-uri-label');
+  if (lbl) lbl.textContent = `Ref: ${invId} (${fmtINR(amt)})`;
+}
+
+async function confirmScannerPayment() {
+  const inv = getActiveScannerInvoice();
+  if (!inv) return;
+  const amtInput = document.getElementById('scanner-amount-input');
+  const amt = Math.max(0, Number(amtInput ? amtInput.value : 0));
+  if (amt <= 0) {
+    showToast('Please enter a valid payment amount.', 'warning');
+    return;
+  }
+
+  // Update invoice paid/due/status
+  inv.paid = Math.min(inv.total, Number(inv.paid || 0) + amt);
+  inv.due = Math.max(0, Number(inv.total) - inv.paid);
+  inv.status = inv.due === 0 ? 'Paid' : 'Partial';
+
+  // Update customer due
+  const cust = state.data.customers.find(c => c.id === inv.customerId);
+  if (cust) {
+    cust.due = Math.max(0, Number(cust.due || 0) - amt);
+  }
+
+  // Record payment entry
+  const payRec = {
+    id: 'PAY-' + String(Date.now()).slice(-5),
+    date: '2026-11-26',
+    invoiceId: inv.id,
+    customerName: inv.customerName,
+    amount: amt,
+    method: 'UPI',
+    ref: 'UPI-QR-' + String(Date.now()).slice(-6),
+    status: inv.due === 0 ? 'Completed' : 'Partial'
+  };
+  state.data.payments.unshift(payRec);
+
+  state.scannerInvoiceId = '';
+  state.scannerAmount = '';
+  saveState();
+  await sbWrite(async s => {
+    await s.from('invoices').update({ paid: inv.paid, due: inv.due, status: inv.status }).eq('id', inv.id);
+    if (cust) await s.from('customers').update({ due: cust.due }).eq('id', cust.id);
+    return s.from('payments').insert({
+      id: payRec.id, payment_date: payRec.date, invoice_id: inv.id,
+      customer_id: cust ? cust.id : null, customer_name: inv.customerName, amount: amt,
+      method: 'UPI', txn_ref: payRec.ref, status: payRec.status
+    });
+  });
+  renderCurrentView();
+  showToast(`UPI QR payment of ${fmtINR(amt)} recorded for ${inv.id}!`, 'success');
+}
+
+function payInvoiceWithScanner(invId) {
+  state.scannerInvoiceId = invId;
+  const inv = state.data.invoices.find(i => i.id === invId);
+  state.scannerAmount = inv ? String(inv.due > 0 ? inv.due : inv.total) : '';
+  closeModal();
+  navigate('payments');
+}
+
+function openEditBankModal() {
+  const b = state.data.bankDetails || DEFAULT_DATA.bankDetails;
+  openModal(`
+    <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+      <h3 class="text-base font-bold text-slate-900">Edit Store Bank &amp; UPI Details</h3>
+      <button type="button" onclick="closeModal()" class="text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+    </div>
+    <form onsubmit="submitEditBank(event)" class="p-6 space-y-4 text-xs">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Bank Name</label>
+          <input id="bank-name" required value="${escapeHtml(b.bankName)}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Account Holder Name</label>
+          <input id="bank-holder" required value="${escapeHtml(b.accountHolder)}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Account Number</label>
+          <input id="bank-acct" required value="${escapeHtml(b.accountNumber)}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">IFSC Code</label>
+          <input id="bank-ifsc" required value="${escapeHtml(b.ifsc)}" class="w-full px-3 py-2 border border-slate-300 rounded-lg uppercase" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Branch Name</label>
+          <input id="bank-branch" required value="${escapeHtml(b.branch)}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">UPI ID</label>
+          <input id="bank-upi" required value="${escapeHtml(b.upiId)}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-200">
+        <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-lg border border-slate-300 font-semibold cursor-pointer">Cancel</button>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold cursor-pointer">Save Bank Details</button>
+      </div>
+    </form>
+  `);
+}
+
+function submitEditBank(e) {
+  e.preventDefault();
+  state.data.bankDetails = {
+    bankName: document.getElementById('bank-name').value.trim(),
+    accountHolder: document.getElementById('bank-holder').value.trim(),
+    accountNumber: document.getElementById('bank-acct').value.trim(),
+    ifsc: document.getElementById('bank-ifsc').value.trim().toUpperCase(),
+    branch: document.getElementById('bank-branch').value.trim(),
+    upiId: document.getElementById('bank-upi').value.trim()
+  };
+  saveState();
+  sbWrite(s => s.from('store_settings').update({
+    bank_name: state.data.bankDetails.bankName, account_holder: state.data.bankDetails.accountHolder,
+    account_number: state.data.bankDetails.accountNumber, ifsc: state.data.bankDetails.ifsc,
+    branch: state.data.bankDetails.branch, upi_id: state.data.bankDetails.upiId
+  }).eq('id', 1));
+  closeModal();
+  renderCurrentView();
+  showToast('Store bank & UPI details updated.', 'success');
+}
+
+function renderInvoices(container) {
+  const q = state.invoiceSearch.toLowerCase();
+  const isCust = state.currentUser && state.currentUser.key === 'customer';
+  const baseInvoices = isCust ? state.data.invoices.filter(i => i.customerId === state.currentUser.customerId) : state.data.invoices;
+  const list = baseInvoices.filter(i => !q || i.id.toLowerCase().includes(q) || i.customerName.toLowerCase().includes(q));
+
+  container.innerHTML = `
+    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
+      <form onsubmit="event.preventDefault(); state.invoiceSearch=document.getElementById('inv-num-search').value; renderCurrentView();" class="flex items-center gap-1.5 flex-1 min-w-[240px] max-w-md">
+        <div class="relative flex-1">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+          <input id="inv-num-search" type="text" placeholder="Search invoice # or customer..." value="${escapeHtml(state.invoiceSearch)}" class="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        </div>
+        <button type="submit" class="px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold cursor-pointer shrink-0">Search</button>
+        ${state.invoiceSearch ? `<button type="button" onclick="state.invoiceSearch=''; renderCurrentView();" class="px-2.5 py-2 rounded-lg border border-slate-300 text-xs text-slate-600 cursor-pointer shrink-0">Clear</button>` : ''}
+      </form>
+      <button type="button" onclick="navigate('pos')" class="px-3.5 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold cursor-pointer">+ Create New Invoice</button>
+    </div>
+
+    <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+              <th class="px-4 py-3">Invoice #</th>
+              <th class="px-4 py-3">Date</th>
+              <th class="px-4 py-3">Customer</th>
+              <th class="px-4 py-3">Billed By</th>
+              <th class="px-4 py-3 text-right">Total (Incl. GST)</th>
+              <th class="px-4 py-3 text-right">Due</th>
+              <th class="px-4 py-3">Status</th>
+              <th class="px-4 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 text-xs">
+            ${list.map(inv => `
+              <tr class="hover:bg-slate-50/80">
+                <td class="px-4 py-3 font-bold text-slate-900">${escapeHtml(inv.id)}</td>
+                <td class="px-4 py-3 text-slate-600">${inv.date}</td>
+                <td class="px-4 py-3 font-medium text-slate-900">${escapeHtml(inv.customerName)}</td>
+                <td class="px-4 py-3 text-slate-600">${escapeHtml(inv.staff)}</td>
+                <td class="px-4 py-3 text-right font-bold tabular-nums">${fmtINR(inv.total)}</td>
+                <td class="px-4 py-3 text-right font-semibold tabular-nums ${inv.due>0?'text-rose-600':'text-slate-500'}">${fmtINR(inv.due)}</td>
+                <td class="px-4 py-3">
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${inv.status==='Paid'?'bg-emerald-100 text-emerald-800':inv.status==='Partial'?'bg-amber-100 text-amber-800':'bg-rose-100 text-rose-800'}">${inv.status}</span>
+                </td>
+                <td class="px-4 py-3 text-right">
+                  <button type="button" onclick="openInvoiceModal('${inv.id}')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-emerald-700 hover:text-white text-slate-700 font-semibold cursor-pointer transition">View / Print</button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function openInvoiceModal(invId) {
+  const inv = state.data.invoices.find(i => i.id === invId);
+  if (!inv) return;
+  const st = state.data.store;
+  openModal(`
+    <div id="print-invoice-area" class="p-6 sm:p-8 text-xs text-slate-800 space-y-5">
+      <div class="flex flex-wrap justify-between items-start gap-4 border-b border-slate-200 pb-4">
+        <div>
+          <div class="text-lg font-extrabold text-emerald-800">${escapeHtml(st.name)}</div>
+          <div class="text-[11px] text-slate-500 mt-0.5">${escapeHtml(st.address)}</div>
+          <div class="text-[11px] text-slate-500">GSTIN: <strong>${st.gstin}</strong> • Pesticide Lic: <strong>${st.license}</strong></div>
+        </div>
+        <div class="text-right">
+          <div class="text-base font-bold text-slate-900">TAX INVOICE</div>
+          <div class="font-semibold text-emerald-700">${escapeHtml(inv.id)}</div>
+          <div class="text-[11px] text-slate-500">Date: ${inv.date}</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 bg-slate-50 p-3.5 rounded-lg border border-slate-200">
+        <div>
+          <div class="text-[10px] uppercase font-bold text-slate-400">Billed To</div>
+          <div class="font-bold text-slate-900 text-sm">${escapeHtml(inv.customerName)}</div>
+          <div class="text-slate-600">Phone: +91 ${escapeHtml(inv.customerPhone)}</div>
+        </div>
+        <div class="text-right">
+          <div class="text-[10px] uppercase font-bold text-slate-400">Payment Summary</div>
+          <div>Mode: <strong>${escapeHtml(inv.method)}</strong></div>
+          <div>Status: <strong class="${inv.due>0?'text-rose-600':'text-emerald-700'}">${inv.status}</strong></div>
+        </div>
+      </div>
+
+      <table class="w-full text-left border-collapse border border-slate-200">
+        <thead>
+          <tr class="bg-slate-100 text-[11px] font-bold text-slate-700 border-b border-slate-200">
+            <th class="p-2.5">Item Description</th>
+            <th class="p-2.5">HSN / Batch</th>
+            <th class="p-2.5 text-right">Qty</th>
+            <th class="p-2.5 text-right">Rate</th>
+            <th class="p-2.5 text-right">GST</th>
+            <th class="p-2.5 text-right">Amount</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200">
+          ${inv.items.map(line => `
+            <tr>
+              <td class="p-2.5 font-medium">${escapeHtml(line.name)}</td>
+              <td class="p-2.5 text-slate-500">${line.hsn} / ${escapeHtml(line.batch)}</td>
+              <td class="p-2.5 text-right">${line.qty}</td>
+              <td class="p-2.5 text-right">${fmtINR(line.price)}</td>
+              <td class="p-2.5 text-right">${line.gst}%</td>
+              <td class="p-2.5 text-right font-semibold">${fmtINR(line.price * line.qty)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+
+      <div class="flex flex-wrap justify-between items-end gap-4">
+        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-[11px] text-slate-600 max-w-xs">
+          <div class="font-bold text-slate-800 mb-0.5">Bank / UPI Payment Details</div>
+          <div>${escapeHtml((state.data.bankDetails || DEFAULT_DATA.bankDetails).bankName)} • A/C: ${escapeHtml((state.data.bankDetails || DEFAULT_DATA.bankDetails).accountNumber)}</div>
+          <div>IFSC: ${escapeHtml((state.data.bankDetails || DEFAULT_DATA.bankDetails).ifsc)} • UPI: <strong>${escapeHtml((state.data.bankDetails || DEFAULT_DATA.bankDetails).upiId)}</strong></div>
+        </div>
+        <div class="w-64 space-y-1.5">
+          <div class="flex justify-between"><span>Taxable Value:</span><span>${fmtINR(inv.subtotal)}</span></div>
+          <div class="flex justify-between"><span>Total GST:</span><span>${fmtINR(inv.gstAmount)}</span></div>
+          <div class="flex justify-between"><span>Discount:</span><span>-${fmtINR(inv.discount)}</span></div>
+          <div class="flex justify-between text-sm font-bold border-t border-slate-300 pt-1.5"><span>Grand Total:</span><span>${fmtINR(inv.total)}</span></div>
+          <div class="flex justify-between text-emerald-700"><span>Paid:</span><span>${fmtINR(inv.paid)}</span></div>
+          <div class="flex justify-between text-rose-600 font-bold"><span>Balance Due:</span><span>${fmtINR(inv.due)}</span></div>
+        </div>
+      </div>
+
+      <div class="no-print flex flex-wrap justify-between items-center gap-2 pt-4 border-t border-slate-200">
+        <div class="flex flex-wrap gap-2">
+          <button type="button" onclick="payInvoiceWithScanner('${inv.id}')" class="px-3.5 py-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-semibold cursor-pointer flex items-center gap-1.5">
+            <i data-lucide="qr-code" class="w-4 h-4"></i>
+            <span>Pay via UPI Scanner</span>
+          </button>
+          <button type="button" onclick="shareInvoiceWhatsApp('${inv.id}')" class="px-3.5 py-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-semibold cursor-pointer flex items-center gap-1.5">
+            <i data-lucide="message-circle" class="w-4 h-4"></i>
+            <span>Send Invoice via WhatsApp</span>
+          </button>
+        </div>
+        <div class="flex gap-2">
+          <button type="button" onclick="window.print()" class="px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold cursor-pointer flex items-center gap-1.5">
+            <i data-lucide="printer" class="w-4 h-4"></i>
+            <span>Print / Save PDF</span>
+          </button>
+          <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-lg border border-slate-300 font-semibold cursor-pointer">Close</button>
+        </div>
+      </div>
+    </div>
+  `, 'max-w-3xl');
+}
+
+function shareInvoiceWhatsApp(invId) {
+  const inv = state.data.invoices.find(i => i.id === invId);
+  if (!inv) return;
+  const msg = `Namaste ${inv.customerName}, thank you for shopping at ${state.data.store.name}. Invoice ${inv.id} (${inv.date}) Total: ${fmtINR(inv.total)}, Paid: ${fmtINR(inv.paid)}, Balance Due: ${fmtINR(inv.due)}.`;
+  state.data.reminders.unshift({
+    id: 'REM-' + (105 + state.data.reminders.length),
+    date: '2026-11-25 11:06',
+    customerName: inv.customerName,
+    phone: inv.customerPhone,
+    channel: 'WhatsApp',
+    type: 'Invoice Copy',
+    message: msg,
+    status: 'Delivered'
+  });
+  saveState();
+  showToast(`Invoice ${inv.id} dispatched to ${inv.customerName} on WhatsApp.`, 'success');
+}
+
+// ============================================================================
+// 9B. YEARLY WISE LIST VIEW (Owner & Staff Manage, Users View)
+// ============================================================================
+function renderYearly(container) {
+  const yf = state.yearlyFilter;
+  const listAll = state.data.yearlyList || [];
+  const years = ['All', ...Array.from(new Set(listAll.map(r => r.year))).sort((a, b) => b.localeCompare(a))];
+  const q = (yf.search || '').toLowerCase();
+  const filtered = listAll.filter(r => {
+    const matchY = yf.year === 'All' || r.year === yf.year;
+    const matchQ = !q || r.productName.toLowerCase().includes(q) || r.season.toLowerCase().includes(q) || r.category.toLowerCase().includes(q) || (r.notes || '').toLowerCase().includes(q);
+    return matchY && matchQ;
+  });
+
+  const totalQty = filtered.reduce((a, r) => a + Number(r.totalQtySold || 0), 0);
+  const totalVal = filtered.reduce((a, r) => a + Number(r.totalRevenue || 0), 0);
+
+  container.innerHTML = `
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+        <div class="text-xs font-semibold text-slate-500 uppercase">Yearly Records Shown</div>
+        <div class="text-2xl font-bold text-slate-900 mt-1 tabular-nums">${filtered.length}</div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+        <div class="text-xs font-semibold text-slate-500 uppercase">Total Units (Filtered)</div>
+        <div class="text-2xl font-bold text-emerald-700 mt-1 tabular-nums">${totalQty.toLocaleString('en-IN')}</div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+        <div class="text-xs font-semibold text-slate-500 uppercase">Annual Value (Filtered)</div>
+        <div class="text-2xl font-bold text-indigo-700 mt-1 tabular-nums">${fmtINR(totalVal)}</div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
+      <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[240px]">
+        <form onsubmit="event.preventDefault(); state.yearlyFilter.search=document.getElementById('yearly-search-input').value; renderCurrentView();" class="flex items-center gap-1.5 flex-1 min-w-[220px] max-w-sm">
+          <div class="relative flex-1">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+            <input id="yearly-search-input" type="text" placeholder="Search product, season, notes..." value="${escapeHtml(yf.search)}" class="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          </div>
+          <button type="submit" class="px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold cursor-pointer shrink-0">Search</button>
+          ${yf.search ? `<button type="button" onclick="state.yearlyFilter.search=''; renderCurrentView();" class="px-2.5 py-2 rounded-lg border border-slate-300 text-xs text-slate-600 cursor-pointer shrink-0">Clear</button>` : ''}
+        </form>
+        <select onchange="state.yearlyFilter.year=this.value; renderCurrentView();" class="px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white">
+          ${years.map(y => `<option value="${y}" ${yf.year===y?'selected':''}>${y === 'All' ? 'All Years' : 'Year ' + y}</option>`).join('')}
+        </select>
+      </div>
+      ${hasPerm('manage_yearly') ? `
+        <button type="button" onclick="openYearlyModal()" class="px-3.5 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Add Yearly Record</span>
+        </button>
+      ` : ''}
+    </div>
+
+    <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+              <th class="px-4 py-3">Year &amp; Season</th>
+              <th class="px-4 py-3">Product &amp; Category</th>
+              <th class="px-4 py-3 text-right">Annual Rate</th>
+              <th class="px-4 py-3 text-right">Qty Sold / Supply</th>
+              <th class="px-4 py-3 text-right">Total Value</th>
+              <th class="px-4 py-3">Notes</th>
+              ${hasPerm('manage_yearly') ? '<th class="px-4 py-3 text-right">Manage</th>' : ''}
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 text-xs">
+            ${filtered.map(r => `
+              <tr class="hover:bg-slate-50/80">
+                <td class="px-4 py-3">
+                  <span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-bold text-[11px]">${escapeHtml(r.year)}</span>
+                  <div class="text-[11px] text-slate-500 mt-0.5">${escapeHtml(r.season)}</div>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="font-semibold text-slate-900">${escapeHtml(r.productName)}</div>
+                  <div class="text-[11px] text-slate-500">${escapeHtml(r.category)}</div>
+                </td>
+                <td class="px-4 py-3 text-right font-medium tabular-nums">${fmtINR(r.unitRate)}</td>
+                <td class="px-4 py-3 text-right font-bold tabular-nums">${Number(r.totalQtySold).toLocaleString('en-IN')}</td>
+                <td class="px-4 py-3 text-right font-bold text-emerald-700 tabular-nums">${fmtINR(r.totalRevenue)}</td>
+                <td class="px-4 py-3 text-slate-600 max-w-xs">${escapeHtml(r.notes || '—')}</td>
+                ${hasPerm('manage_yearly') ? `
+                  <td class="px-4 py-3 text-right space-x-1 whitespace-nowrap">
+                    <button type="button" onclick="openYearlyModal('${r.id}')" class="px-2 py-1 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold cursor-pointer">Edit</button>
+                    <button type="button" onclick="deleteYearlyRecord('${r.id}')" class="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold cursor-pointer">Delete</button>
+                  </td>
+                ` : ''}
+              </tr>
+            `).join('') || `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-500">No yearly records match your search.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function openYearlyModal(recId = null) {
+  const existing = recId ? (state.data.yearlyList || []).find(r => r.id === recId) : null;
+  openModal(`
+    <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+      <h3 class="text-base font-bold text-slate-900">${existing ? 'Edit Yearly Record' : 'Add Yearly Record'}</h3>
+      <button type="button" onclick="closeModal()" class="text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+    </div>
+    <form onsubmit="submitYearlyRecord(event, '${recId || ''}')" class="p-6 space-y-4 text-xs">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Year</label>
+          <input id="yr-year" required value="${existing ? escapeHtml(existing.year) : '2026'}" placeholder="e.g. 2026" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Season / Period</label>
+          <input id="yr-season" required value="${existing ? escapeHtml(existing.season) : 'Kharif 2026'}" placeholder="e.g. Kharif 2026" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Product Name</label>
+          <input id="yr-prod" required value="${existing ? escapeHtml(existing.productName) : ''}" placeholder="e.g. Confidor (Imidacloprid)" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Category</label>
+          <select id="yr-cat" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
+            ${['Insecticide', 'Fungicide', 'Herbicide', 'Bio-Pesticide', 'Micronutrient'].map(c => `<option ${existing && existing.category===c?'selected':''}>${c}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Annual Unit Rate (₹)</label>
+          <input id="yr-rate" type="number" min="1" required value="${existing ? existing.unitRate : 500}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Total Qty Sold / Supply</label>
+          <input id="yr-qty" type="number" min="0" required value="${existing ? existing.totalQtySold : 100}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+      </div>
+      <div>
+        <label class="block font-semibold text-slate-700 mb-1">Notes / Crop Remarks</label>
+        <input id="yr-notes" value="${existing ? escapeHtml(existing.notes) : ''}" placeholder="e.g. Regional demand summary" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-200">
+        <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-lg border border-slate-300 font-semibold cursor-pointer">Cancel</button>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold cursor-pointer">Save Yearly Record</button>
+      </div>
+    </form>
+  `);
+}
+
+async function submitYearlyRecord(e, recId) {
+  e.preventDefault();
+  const rate = parseFloat(document.getElementById('yr-rate').value) || 0;
+  const qty = parseInt(document.getElementById('yr-qty').value, 10) || 0;
+  const payload = {
+    id: recId || ('Y' + Date.now().toString().slice(-5)),
+    year: document.getElementById('yr-year').value.trim(),
+    season: document.getElementById('yr-season').value.trim(),
+    productName: document.getElementById('yr-prod').value.trim(),
+    category: document.getElementById('yr-cat').value,
+    unitRate: rate,
+    totalQtySold: qty,
+    totalRevenue: Math.round(rate * qty),
+    notes: document.getElementById('yr-notes').value.trim()
+  };
+  const res = await sbWrite(s => recId && isUuid(recId)
+    ? s.from('yearly_list').update({
+        year: payload.year, season: payload.season, product_name: payload.productName,
+        category: payload.category, unit_rate: payload.unitRate, total_qty_sold: payload.totalQtySold,
+        total_revenue: payload.totalRevenue, notes: payload.notes
+      }).eq('id', recId)
+    : s.from('yearly_list').insert({
+        year: payload.year, season: payload.season, product_name: payload.productName,
+        category: payload.category, unit_rate: payload.unitRate, total_qty_sold: payload.totalQtySold,
+        total_revenue: payload.totalRevenue, notes: payload.notes
+      }));
+  if (!res.ok) return;
+  if (USE_SUPABASE) {
+    await syncFromSupabase();
+  } else {
+    if (!state.data.yearlyList) state.data.yearlyList = [];
+    if (recId) {
+      const idx = state.data.yearlyList.findIndex(r => r.id === recId);
+      if (idx !== -1) state.data.yearlyList[idx] = payload;
+    } else {
+      state.data.yearlyList.unshift(payload);
+    }
+    saveState();
+  }
+  closeModal();
+  renderCurrentView();
+  showToast('Yearly list record saved.', 'success');
+}
+
+async function deleteYearlyRecord(recId) {
+  const res = await sbWrite(s => isUuid(recId) ? s.from('yearly_list').delete().eq('id', recId) : Promise.resolve({ ok: true }));
+  if (!res.ok) return;
+  state.data.yearlyList = (state.data.yearlyList || []).filter(r => r.id !== recId);
+  saveState();
+  renderCurrentView();
+  showToast('Yearly record deleted.', 'warning');
+}
+
+// ============================================================================
+// 10. WHATSAPP & SMS REMINDERS VIEW
+// ============================================================================
+const REMINDER_TEMPLATES = {
+  payment_due: {
+    label: 'Payment Due / Udhaar Reminder',
+    build: (c) => `Namaste ${c.name}, gentle reminder from KisanGuard Agro: ₹${c.due.toLocaleString('en-IN')} is pending on your account. Please pay via UPI or at the store. Thank you!`
+  },
+  spray_schedule: {
+    label: 'Crop Spraying Follow-up (15-Day)',
+    build: (c) => `KisanGuard Crop Advisory: Namaste ${c.name}, your 15-day follow-up pesticide spray for ${c.crop} is due this week. Visit us for fresh stock & dosage guidance.`
+  },
+  new_stock: {
+    label: 'New Agrochemical Stock Arrival',
+    build: (c) => `Namaste ${c.name}, fresh stock of Bayer Confidor, Coragen & Micronutrients has arrived at KisanGuard Agro. Special seasonal rates available this week!`
+  }
+};
+
+function renderReminders(container) {
+  if (state.currentUser && state.currentUser.key === 'customer') {
+    const myRems = state.data.reminders.filter(r => r.customerName === state.currentUser.name);
+    const rq = (state.reminderSearch || '').toLowerCase();
+    const filtered = myRems.filter(r => !rq || r.channel.toLowerCase().includes(rq) || r.message.toLowerCase().includes(rq));
+    container.innerHTML = `
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="text-sm font-bold text-slate-900">My WhatsApp Reminders</h3>
+            <p class="text-xs text-slate-500">Payment alerts &amp; crop spray advisories sent to you by the store</p>
+          </div>
+          <form onsubmit="event.preventDefault(); state.reminderSearch=document.getElementById('rem-cust-search').value; renderCurrentView();" class="flex items-center gap-1.5">
+            <input id="rem-cust-search" type="text" placeholder="Search messages..." value="${escapeHtml(state.reminderSearch)}" class="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs w-44" />
+            <button type="submit" class="px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-semibold cursor-pointer">Search</button>
+          </form>
+        </div>
+        <div class="space-y-3">
+          ${filtered.map(r => `
+            <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1">
+              <div class="flex items-center justify-between">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${r.channel==='WhatsApp'?'bg-emerald-100 text-emerald-800':'bg-blue-100 text-blue-800'}">${r.channel}</span>
+                <span class="text-[11px] text-slate-400">${r.date}</span>
+              </div>
+              <p class="text-xs text-slate-700">${escapeHtml(r.message)}</p>
+            </div>
+          `).join('') || '<p class="text-xs text-slate-500 py-6 text-center">No reminders found.</p>'}
+        </div>
+      </div>
+    `;
+    return;
+  }
+  const rd = state.reminderDraft;
+  const custs = state.data.customers;
+  const firstSelected = custs.find(c => rd.selectedCustomerIds.includes(c.id)) || custs[0];
+  const previewText = rd.customText || REMINDER_TEMPLATES[rd.template].build(firstSelected);
+
+  container.innerHTML = `
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <!-- Composer -->
+      <div class="lg:col-span-5 bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-bold text-slate-900">Compose WhatsApp Reminder</h3>
+          <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-semibold">Free via wa.me</span>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1.5">2. Reminder Template</label>
+          <select onchange="state.reminderDraft.template=this.value; state.reminderDraft.customText=''; renderCurrentView();" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white">
+            ${Object.entries(REMINDER_TEMPLATES).map(([k, v]) => `<option value="${k}" ${rd.template===k?'selected':''}>${v.label}</option>`).join('')}
+          </select>
+        </div>
+
+        <div>
+          <div class="flex justify-between items-center mb-1.5">
+            <label class="text-[11px] font-semibold text-slate-600 uppercase">3. Select Recipients (${rd.selectedCustomerIds.length})</label>
+            <button type="button" onclick="selectDueCustomers()" class="text-[11px] font-semibold text-emerald-700 hover:underline cursor-pointer">Select All With Dues</button>
+          </div>
+          <div class="border border-slate-200 rounded-lg max-h-40 overflow-y-auto divide-y divide-slate-100">
+            ${custs.map(c => {
+              const checked = rd.selectedCustomerIds.includes(c.id);
+              return `
+                <label class="flex items-center justify-between px-3 py-2 text-xs hover:bg-slate-50 cursor-pointer">
+                  <span class="flex items-center gap-2">
+                    <input type="checkbox" ${checked?'checked':''} onchange="toggleReminderRecipient('${c.id}')" class="rounded text-emerald-600" />
+                    <span class="font-medium text-slate-800">${escapeHtml(c.name)}</span>
+                  </span>
+                  <span class="text-[11px] ${c.due>0?'text-rose-600 font-semibold':'text-slate-400'}">${c.due>0?fmtINR(c.due)+' due':'No due'}</span>
+                </label>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">4. Message Preview (Personalizes per farmer)</label>
+          <textarea id="reminder-msg-box" rows="3" oninput="state.reminderDraft.customText=this.value;" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">${escapeHtml(previewText)}</textarea>
+          <div class="text-[11px] text-slate-400 mt-1">${previewText.length} characters • 100% Free WhatsApp Click-to-Chat</div>
+        </div>
+
+        <button type="button" onclick="dispatchBulkReminders()" class="w-full py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition">
+          <i data-lucide="send" class="w-4 h-4"></i>
+          <span>Send WhatsApp Reminder to ${rd.selectedCustomerIds.length} Farmer(s)</span>
+        </button>
+      </div>
+
+      <!-- Dispatch History Log -->
+      <div class="lg:col-span-7 bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <h3 class="text-sm font-bold text-slate-900">Sent WhatsApp Reminders Log</h3>
+          <form onsubmit="event.preventDefault(); state.reminderSearch=document.getElementById('rem-search-input').value; renderCurrentView();" class="flex items-center gap-1.5">
+            <input id="rem-search-input" type="text" placeholder="Search farmer, channel..." value="${escapeHtml(state.reminderSearch)}" class="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs w-44 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            <button type="submit" class="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold cursor-pointer">Search</button>
+            ${state.reminderSearch ? `<button type="button" onclick="state.reminderSearch=''; renderCurrentView();" class="px-2 py-1.5 rounded-lg border border-slate-300 text-xs cursor-pointer">✕</button>` : ''}
+          </form>
+        </div>
+        <div class="space-y-3 max-h-[520px] overflow-y-auto pr-1">
+          ${state.data.reminders.filter(r => {
+            const rq = (state.reminderSearch || '').toLowerCase();
+            return !rq || r.customerName.toLowerCase().includes(rq) || r.channel.toLowerCase().includes(rq) || r.message.toLowerCase().includes(rq);
+          }).map(r => `
+            <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${r.channel==='WhatsApp'?'bg-emerald-100 text-emerald-800':'bg-blue-100 text-blue-800'}">${r.channel}</span>
+                  <span class="text-xs font-bold text-slate-900">${escapeHtml(r.customerName)}</span>
+                  <span class="text-[11px] text-slate-500">+91 ${escapeHtml(r.phone)}</span>
+                </div>
+                <div class="flex items-center gap-2 text-[11px]">
+                  <span class="text-slate-400">${r.date}</span>
+                  <span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-semibold">${r.status}</span>
+                </div>
+              </div>
+              <p class="text-xs text-slate-700 leading-relaxed">${escapeHtml(r.message)}</p>
+              <div class="pt-1">
+                <a href="https://wa.me/91${encodeURIComponent(r.phone)}?text=${encodeURIComponent(r.message)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:underline">
+                  <i data-lucide="external-link" class="w-3 h-3"></i> Open in WhatsApp (wa.me)
+                </a>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function toggleReminderRecipient(custId) {
+  const arr = state.reminderDraft.selectedCustomerIds;
+  const idx = arr.indexOf(custId);
+  if (idx === -1) arr.push(custId);
+  else arr.splice(idx, 1);
+  renderCurrentView();
+}
+
+function selectDueCustomers() {
+  state.reminderDraft.selectedCustomerIds = state.data.customers.filter(c => c.due > 0).map(c => c.id);
+  renderCurrentView();
+}
+
+async function dispatchBulkReminders() {
+  const ids = state.reminderDraft.selectedCustomerIds;
+  if (ids.length === 0) {
+    showToast('Please select at least one recipient.', 'warning');
+    return;
+  }
+  const rd = state.reminderDraft;
+  const rowsToInsert = [];
+  ids.forEach(cid => {
+    const c = state.data.customers.find(x => x.id === cid);
+    if (!c) return;
+    const msg = rd.customText ? rd.customText : REMINDER_TEMPLATES[rd.template].build(c);
+    const rec = {
+      id: 'REM-' + String(Date.now()).slice(-5),
+      date: '2026-11-26 15:15',
+      customerName: c.name,
+      phone: c.phone,
+      channel: 'WhatsApp',
+      type: REMINDER_TEMPLATES[rd.template].label,
+      message: msg,
+      status: 'Delivered'
+    };
+    state.data.reminders.unshift(rec);
+    rowsToInsert.push({
+      customer_id: isUuid(c.id) ? c.id : null,
+      customer_name: c.name,
+      phone: c.phone,
+      channel: 'WhatsApp',
+      reminder_type: rec.type,
+      message: msg,
+      status: 'Delivered'
+    });
+  });
+  saveState();
+  const res = await sbWrite(s => s.from('reminders').insert(rowsToInsert));
+  if (res.ok && USE_SUPABASE) await syncFromSupabase();
+  renderCurrentView();
+  if (rowsToInsert.length === 1) {
+    const one = rowsToInsert[0];
+    window.open(`https://wa.me/91${encodeURIComponent(one.phone)}?text=${encodeURIComponent(one.message)}`, '_blank', 'noopener,noreferrer');
+  }
+  if (res.ok) showToast(`Logged ${ids.length} WhatsApp reminder(s) — click "Open in WhatsApp" to send!`, 'success');
+}
+
+async function quickSendReminder(custId, channel) {
+  const c = state.data.customers.find(x => x.id === custId);
+  if (!c) return;
+  const msg = c.due > 0 ? REMINDER_TEMPLATES.payment_due.build(c) : REMINDER_TEMPLATES.spray_schedule.build(c);
+  const rType = c.due > 0 ? 'Payment Due' : 'Crop Spray Schedule';
+  state.data.reminders.unshift({
+    id: 'REM-' + String(Date.now()).slice(-5),
+    date: '2026-11-26 15:15',
+    customerName: c.name,
+    phone: c.phone,
+    channel: 'WhatsApp',
+    type: rType,
+    message: msg,
+    status: 'Delivered'
+  });
+  saveState();
+  await sbWrite(s => s.from('reminders').insert({
+    customer_id: isUuid(c.id) ? c.id : null,
+    customer_name: c.name,
+    phone: c.phone,
+    channel: 'WhatsApp',
+    reminder_type: rType,
+    message: msg,
+    status: 'Delivered'
+  }));
+  window.open(`https://wa.me/91${encodeURIComponent(c.phone)}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
+  showToast(`Opening WhatsApp for ${c.name}.`, 'success');
+}
+
+// ============================================================================
+// 11. STAFF & ROLES VIEW
+// ============================================================================
+function renderStaff(container) {
+  const sq = (state.staffSearch || '').toLowerCase();
+  const staffFiltered = state.data.staffList.filter(s => !sq || s.name.toLowerCase().includes(sq) || s.role.toLowerCase().includes(sq) || s.email.toLowerCase().includes(sq));
+  const st = state.data.store;
+  container.innerHTML = `
+    <!-- Store Profile Card (Owner can edit) -->
+    <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div>
+          <h3 class="text-sm font-bold text-slate-900">${escapeHtml(st.name)}</h3>
+          <p class="text-xs text-slate-500">GSTIN: <strong>${escapeHtml(st.gstin)}</strong> • License: <strong>${escapeHtml(st.license)}</strong> • ${escapeHtml(st.phone)}</p>
+          <p class="text-[11px] text-slate-500 mt-0.5">${escapeHtml(st.address)}</p>
+        </div>
+        ${hasPerm('profit_view') ? `<button type="button" onclick="openEditStoreModal()" class="px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold cursor-pointer">Edit Store Info</button>` : ''}
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h3 class="text-sm font-bold text-slate-900">Store Team &amp; Role-Based Access</h3>
+        <p class="text-xs text-slate-500">Manage logins for Shop Owner, Admin, and Store Staff</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <form onsubmit="event.preventDefault(); state.staffSearch=document.getElementById('staff-search-input').value; renderCurrentView();" class="flex items-center gap-1.5">
+          <input id="staff-search-input" type="text" placeholder="Search staff or role..." value="${escapeHtml(state.staffSearch)}" class="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs w-44 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          <button type="submit" class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold cursor-pointer">Search</button>
+          ${state.staffSearch ? `<button type="button" onclick="state.staffSearch=''; renderCurrentView();" class="px-2 py-1.5 rounded-lg border border-slate-300 text-xs cursor-pointer">✕</button>` : ''}
+        </form>
+        <button type="button" onclick="openStaffModal()" class="px-3.5 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold cursor-pointer">+ Add Staff</button>
+        <button type="button" onclick="resetDemoData()" class="px-3.5 py-2 rounded-lg border border-slate-300 hover:bg-slate-50 text-xs font-semibold text-slate-700 cursor-pointer">
+          Reset Demo Data
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      ${staffFiltered.map(s => `
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs flex items-center justify-between gap-4">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 font-bold text-sm flex items-center justify-center shrink-0">
+              ${s.name.split(' ').map(w => w[0]).join('').slice(0,2)}
+            </div>
+            <div class="min-w-0">
+              <div class="text-sm font-bold text-slate-900 truncate">${escapeHtml(s.name)}</div>
+              <div class="text-xs text-slate-500 truncate">${escapeHtml(s.email)} • +91 ${escapeHtml(s.phone)}</div>
+              <div class="text-[11px] text-emerald-700 font-medium mt-0.5">${escapeHtml(s.role)} • ${s.lastActive}</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button type="button" onclick="toggleStaffStatus('${s.id}')" class="px-2.5 py-1 rounded-full text-[11px] font-semibold cursor-pointer ${s.status==='Active'?'bg-emerald-50 text-emerald-700':'bg-slate-100 text-slate-600'}">${s.status}</button>
+            <button type="button" onclick="openStaffModal('${s.id}')" class="px-2 py-1 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[11px] font-semibold cursor-pointer">Edit</button>
+            ${s.role !== 'Shop Owner' ? `<button type="button" onclick="deleteStaff('${s.id}')" class="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 text-[11px] font-semibold cursor-pointer">Delete</button>` : ''}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function openEditStoreModal() {
+  const st = state.data.store;
+  openModal(`
+    <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+      <h3 class="text-base font-bold text-slate-900">Edit Store Details</h3>
+      <button type="button" onclick="closeModal()" class="text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+    </div>
+    <form onsubmit="submitEditStore(event)" class="p-6 space-y-4 text-xs">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Store Name</label>
+          <input id="st-name" required value="${escapeHtml(st.name)}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Phone</label>
+          <input id="st-phone" required value="${escapeHtml(st.phone)}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">GSTIN</label>
+          <input id="st-gstin" required value="${escapeHtml(st.gstin)}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Pesticide License No.</label>
+          <input id="st-lic" required value="${escapeHtml(st.license)}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+      </div>
+      <div>
+        <label class="block font-semibold text-slate-700 mb-1">Store Address</label>
+        <input id="st-addr" required value="${escapeHtml(st.address)}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-200">
+        <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-lg border border-slate-300 font-semibold cursor-pointer">Cancel</button>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-700 text-white font-semibold cursor-pointer">Save Store Info</button>
+      </div>
+    </form>
+  `);
+}
+
+function submitEditStore(e) {
+  e.preventDefault();
+  state.data.store = {
+    name: document.getElementById('st-name').value.trim(),
+    phone: document.getElementById('st-phone').value.trim(),
+    gstin: document.getElementById('st-gstin').value.trim(),
+    license: document.getElementById('st-lic').value.trim(),
+    address: document.getElementById('st-addr').value.trim()
+  };
+  saveState();
+  sbWrite(s => s.from('store_settings').update({
+    store_name: state.data.store.name, phone: state.data.store.phone,
+    gstin: state.data.store.gstin, pesticide_license: state.data.store.license, address: state.data.store.address
+  }).eq('id', 1));
+  closeModal();
+  renderCurrentView();
+  showToast('Store details updated.', 'success');
+}
+
+function openStaffModal(staffId = null) {
+  const existing = staffId ? state.data.staffList.find(s => s.id === staffId) : null;
+  openModal(`
+    <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+      <h3 class="text-base font-bold text-slate-900">${existing ? 'Edit Team Member' : 'Add Staff / Admin'}</h3>
+      <button type="button" onclick="closeModal()" class="text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+    </div>
+    <form onsubmit="submitStaffMember(event, '${staffId || ''}')" class="p-6 space-y-4 text-xs">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Full Name</label>
+          <input id="sf-name" required value="${existing ? escapeHtml(existing.name) : ''}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Role</label>
+          <select id="sf-role" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
+            ${['Shop Owner', 'Admin / Manager', 'Staff / Cashier', 'Staff / Warehouse'].map(r => `<option ${existing && existing.role===r?'selected':''}>${r}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Email</label>
+          <input id="sf-email" type="email" required value="${existing ? escapeHtml(existing.email) : ''}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Phone (10 digits)</label>
+          <input id="sf-phone" required value="${existing ? escapeHtml(existing.phone) : ''}" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+      </div>
+      <div>
+        <label class="block font-semibold text-slate-700 mb-1">Assign Login Password / PIN</label>
+        <input id="sf-pwd" type="text" required minlength="4" value="${existing ? escapeHtml(existing.password || '') : ''}" placeholder="Set password to share with staff/admin" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-200">
+        <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-lg border border-slate-300 font-semibold cursor-pointer">Cancel</button>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-700 text-white font-semibold cursor-pointer">Save Member</button>
+      </div>
+    </form>
+  `, 'max-w-lg');
+}
+
+function submitStaffMember(e, staffId) {
+  e.preventDefault();
+  const payload = {
+    id: staffId || ('U' + String(Date.now()).slice(-3)),
+    name: document.getElementById('sf-name').value.trim(),
+    role: document.getElementById('sf-role').value,
+    email: document.getElementById('sf-email').value.trim(),
+    phone: document.getElementById('sf-phone').value.trim(),
+    password: document.getElementById('sf-pwd').value.trim(),
+    status: 'Active',
+    lastActive: 'Just added'
+  };
+  if (staffId) {
+    const idx = state.data.staffList.findIndex(s => s.id === staffId);
+    if (idx !== -1) state.data.staffList[idx] = { ...state.data.staffList[idx], ...payload };
+  } else {
+    state.data.staffList.push(payload);
+  }
+  saveState();
+  closeModal();
+  renderCurrentView();
+  showToast('Team member saved.', 'success');
+}
+
+function toggleStaffStatus(staffId) {
+  const s = state.data.staffList.find(x => x.id === staffId);
+  if (!s) return;
+  s.status = s.status === 'Active' ? 'Inactive' : 'Active';
+  saveState();
+  renderCurrentView();
+}
+
+function deleteStaff(staffId) {
+  state.data.staffList = state.data.staffList.filter(s => s.id !== staffId);
+  saveState();
+  renderCurrentView();
+  showToast('Team member removed.', 'warning');
+}
+
+// ============================================================================
+// 12. BOOTSTRAP & EVENT LISTENERS
+// ============================================================================
+window.addEventListener('DOMContentLoaded', () => {
+  loadSavedState();
+
+  document.querySelectorAll('.role-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => selectLoginRole(btn.dataset.roleTab));
+  });
+
+  document.getElementById('login-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    handleCredentialLogin();
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', logout);
+
+  document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.toggle('hidden');
+  });
+  document.getElementById('close-sidebar-btn').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.add('hidden');
+  });
+
+  if (window.lucide) lucide.createIcons();
+});
+</script>
+</body>
+</html>
